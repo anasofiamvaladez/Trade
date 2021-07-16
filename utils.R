@@ -1,0 +1,92 @@
+library(tidyverse)
+library(igraph)
+library(maps)
+library(geosphere)
+library(comtradr)
+library(leaflet)
+library(maptools)
+library(sp)
+library(png)
+library(plyr)
+
+official_names <- c("Bosnia Herzegovina", "Br. Virgin Isds",  "Cabo Verde", 
+                    "Central African Rep.", "Christmas Isds", "Dem. People's Rep. of Korea", 
+                    "Dominican Rep.", "Holy See (Vatican City State)", "Lao People's Dem. Rep.", 
+                    "Norfolk Isds", "Rep. of Korea", "Russian Federation", "Solomon Isds", 
+                    "Turks and Caicos Isds", "Viet Nam", "Bolivia (Plurinational State of)", 
+                    "USA", "United Rep. of Tanzania", "Rep. of Moldova", "Wallis and Futuna Isds", 
+                    "Cocos Isds", "Czechia", "Fmr Sudan", "Cayman Isds", "Br. Indian Ocean Terr.", 
+                    "Falkland Isds (Malvinas)", "China, Hong Kong SAR", "China, Macao SAR", 
+                    "Brunei Darussalam", "Cook Isds", "Marshall Isds", "FS Micronesia", 
+                    "Fr. South Antarctic Terr.", "United States Minor Outlying Islands", 
+                    "Saint BarthÃ©lemy", "CuraÃ§ao", "CÃ´te d'Ivoire")
+
+names <- c("Bosnia and Herzegovina", "British Virgin Islands",  "Cape Verde", 
+           "Central African Republic", "Christmas Island", "North Korea", 
+           "Dominican Republic", "Vatican City", "Laos", "Norfolk Island", 
+           "South Korea", "Russia", "Solomon Islands", "Turks and Caicos Islands", 
+           "Vietnam", "Bolivia", "United States", "Tanzania", "Moldova", 
+           "Wallis and Futuna", "Cocos Islands", "Czech Republic", "Sudan", 
+           "Cayman Islands", "British Indian Ocean Territory", "Falkland Islands [Islas Malvinas]",
+           "China", "China", "Brunei", "Cook Islands", "Marshall Islands", "Micronesia",
+           "French Southern Territories", "United States", "Saint Barthélemy",
+           "Curaçao", "Côte d'Ivoire")
+
+
+
+COUNTRY_EQ <- data.frame(official_names, names, stringsAsFactors=FALSE)
+COORDINATES_C <- read_csv("../lat_lon_country.csv")
+
+
+
+#function that changes the names of countries from official to usual, filters
+#for world, computes the share of the us value/and volume by country, and
+#arranges the order of the colums
+arrange_db <- function(data, country_names=COUNTRY_EQ) {
+  for (i in 1:nrow(country_names)) {
+    data$From[data$From == country_names$official_names[i]] <- country_names$names[i]
+    data$To[data$To == country_names$official_names[i]] <- country_names$names[i]
+  }
+  
+  #delete World, create percentages for value and quantity, and arrange the order
+  final_db <- data %>%
+    dplyr::filter(From != "World") %>%
+    dplyr::filter(To != "World") %>%
+    relocate(From, .before = pfCode) %>%
+    relocate(To, .after = From)
+  return(final_db)
+} 
+
+#get the list of unique countries that export the product and its location
+get_geo_nodes <- function(data, location_file = COORDINATES_C) {
+  countries_from <- unique(data[, "From"]) %>% 
+    dplyr::rename(country = From)
+  countries_to <- unique(data[, "To"]) %>%
+    dplyr::rename(country = To)
+  countries <- rbind(countries_from, countries_to) %>%
+    arrange(country)
+  countries <- unique(countries[, "country"])
+  
+  geo_nodes_countries <- merge(countries, location_file, by.x = "country", 
+                               by.y = "name")
+}
+
+generate_graphos <- function(edges_db, nodes_db) {
+  nodes <- graph.data.frame(edges_db, directed=TRUE, nodes_db)
+  network <- get.data.frame(nodes, "both")
+  vert <- network$vertices
+  coordinates(vert) <- ~longitude + latitude
+  edges <- network$edges
+  edges <- lapply(1:nrow(edges), function(i) {
+    as(rbind(vert[vert$name == edges[i, "from"], ],
+             vert[vert$name == edges[i, "to"], ]),
+       "SpatialLines")
+  })
+  for (i in seq_along(edges)) {
+    edges[[i]] <- spChFIDs(edges[[i]], as.character(i))
+  }
+  edges <- do.call(rbind, edges)
+  return(c(vert, edges))
+}
+
+
