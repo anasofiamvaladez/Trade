@@ -9,7 +9,7 @@
 
 library(shiny)
 library(shinydashboard)
-source("../utils.R")
+source("utils.R")
 library(dplyr)
 
 # Define UI for application that draws a histogram
@@ -19,11 +19,11 @@ ui <- dashboardPage(
     dashboardBody(
         # Boxes need to be put in a row (or column)
         fluidRow(
-            selectInput("phase", "Step of the Supply Chain",
+            column(width = 6, selectInput("phase", "Step of the Supply Chain",
                         choices = c("Back end" = "Back end", 
-                                    "Front end" = "Front end")),
-            box(uiOutput("products")),
-            box(leafletOutput("map"))
+                                    "Front end" = "Front end"), width = NULL)),
+            column(width = 6, box(uiOutput("products"), width = NULL))),
+            column(width = 12, box(leafletOutput("map"), width = NULL)
         )
     )
 )
