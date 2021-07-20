@@ -12,65 +12,103 @@ library(shinydashboard)
 source("utils.R")
 library(dplyr)
 
-# Define UI for application that draws a histogram
+# Define UI (interface server) for application that draws a histogram
 ui <- dashboardPage(
-    dashboardHeader(title = "Trade flow of products in the Supply Chain"),
-    dashboardSidebar(),
-    dashboardBody(
-        # Boxes need to be put in a row (or column)
-        fluidRow(
-            column(width = 6, selectInput("phase", "Step of the Supply Chain",
-                        choices = c("Back end" = "Back end", 
-                                    "Front end" = "Front end"), width = NULL)),
-            column(width = 6, box(uiOutput("products"), width = NULL))),
-            column(width = 12, box(leafletOutput("map"), width = NULL)
-        )
+  dashboardHeader(title = "Trade flow of products in the Supply Chain"),
+  dashboardSidebar(),
+  dashboardBody(
+    # Boxes need to be put in a row (or column)
+    fluidRow(
+      #Create a select list input control, "phase" debe ser parte del input de server
+      column(width = 6, selectInput("phase", "Step of the Supply Chain",
+                                    choices = c("Back end" = "Back end", 
+                                                "Front end" = "Front end"), width = NULL)),
+      column(width = 6, selectInput("fraction", "Top X partners",
+                                    choices = c("10" = 10, 
+                                                "50" = 50,
+                                                "100" = 100,
+                                                "250" = 250,
+                                                "500" = 500
+                                                ), width = NULL)),
+      #products debe ser parte del output de server
+      column(width = 6, box(uiOutput("products"), width = NULL))),
+    #Use leafletOutput() to create a UI element, and renderLeaflet() to render the map widget.
+    column(width = 12, box(leafletOutput("map"), width = NULL)
     )
+  )
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-    values_react <- reactiveValues()
-    trade_db <- read_csv("../db_trade_f.csv") %>% arrange_db()
-    countries_geo <- get_geo_nodes(trade_db)
-    
-    observe({
-        values_react$phase <- input$phase
-        values_react$filtered_db <- trade_db %>% filter(PHASE == values_react$phase)
-        values_react$lst_uprod <- unique(values_react$filtered_db[, "cmdCode"])
+  
+  #It is similar to a list, but with special capabilities for reactive programming
+  values_react <- reactiveValues()
+  
+  #Cambiar nombres de los paises y ordenar database
+  trade_db <- read_csv("db_trade_f.csv") %>% arrange_db()
+  
+  
+  #Create a reactive observer
+  observe({
+    values_react$phase <- input$phase
+    values_react$fraction <- input$fraction
+    values_react$filtered_db <- trade_db %>% filter(PHASE == values_react$phase)
+    values_react$lst_uprod <- unique(values_react$filtered_db[, "cmdCode"])
+  })
+  
+  
+  output$products <- renderUI({
+    selectInput(inputId="choose_product",
+                #titulo del botón
+                label="Select product",
+                choices = values_react$lst_uprod)
+  })
+  
+  output$map <- renderLeaflet({
+    filtered_by_product <- values_react$filtered_db %>% filter(cmdCode == input$choose_product) %>%
+      #mutate() adds new variables and preserves existing ones
+      mutate(percent_value = TradeValue / sum(TradeValue) * 100, 
+             percent_quant = TradeQuantity / sum(TradeQuantity) * 100)
+    filtered_by_product <- head(arrange(filtered_by_product, desc(TradeValue)), n = input$fraction)
+    vertices <- get_geo_nodes(filtered_by_product)
+    nodes_import <- graph.data.frame(filtered_by_product, directed=TRUE, vertices)
+    network_import <- get.data.frame(nodes_import, "both")
+    vert_import <- network_import$vertices
+    coordinates(vert_import) <- ~longitude + latitude
+    edges_import <- network_import$edges
+    edges_import <- lapply(1:nrow(edges_import), function(i) {
+      as(rbind(vert_import[vert_import$name == edges_import[i, "from"], ],
+               vert_import[vert_import$name == edges_import[i, "to"], ]),
+         "SpatialLines")
     })
-
+    for (i in seq_along(edges_import)) {
+      #When the feature IDs need to be changed in SpatialLines* or SpatialPolygons*
+      #objects, these methods may be used
+      edges_import[[i]] <- spChFIDs(edges_import[[i]], as.character(i))
+    }
+    edges_import <- do.call(rbind, edges_import)
     
-    output$products <- renderUI({
-        selectInput(inputId="choose_product",
-                    label="Select product",
-                    choices = values_react$lst_uprod)
-    })
+    #AddMarkers
+    holder_coordinates <- matrix(NA, nrow = length(edges_import), ncol = 2)
     
-    output$map <- renderLeaflet({
-        filtered_by_product <- values_react$filtered_db %>% filter(cmdCode == input$choose_product) %>%
-            mutate(percent_value = TradeValue / sum(TradeValue) * 100, 
-                   percent_quant = TradeQuantity / sum(TradeQuantity) * 100)
-        nodes_import <- graph.data.frame(filtered_by_product, directed=TRUE, countries_geo)
-        network_import <- get.data.frame(nodes_import, "both")
-        vert_import <- network_import$vertices
-        coordinates(vert_import) <- ~longitude + latitude
-        edges_import <- network_import$edges
-        edges_import <- lapply(1:nrow(edges_import), function(i) {
-            as(rbind(vert_import[vert_import$name == edges_import[i, "from"], ],
-                     vert_import[vert_import$name == edges_import[i, "to"], ]),
-               "SpatialLines")
-        })
-        for (i in seq_along(edges_import)) {
-            edges_import[[i]] <- spChFIDs(edges_import[[i]], as.character(i))
-        }
-        edges_import <- do.call(rbind, edges_import)
-        
-        leaflet(vert_import) %>%
-            addTiles() %>%
-            addCircles(data = vert_import, radius = 1000, weight = 10, color = "navy", label = vert_import$name )%>%
-            addPolylines(data = edges_import, weight = filtered_by_product$percent_value, label = filtered_by_product$percent_value)
-    })
+    for (i in seq_along(edges_import)) {
+      holder_coordinates[i,1] = edges_import@lines[[i]]@Lines[1][[1]]@coords[2]
+      holder_coordinates[i,2] = edges_import@lines[[i]]@Lines[1][[1]]@coords[4]
+    }
+    
+    holder_coordinates <- as.data.frame(holder_coordinates)
+    colnames(holder_coordinates) <- c("Long", "Lat")
+    ##
+    
+    leaflet(vert_import) %>%
+      addTiles() %>%
+      addCircles(data = vert_import, radius = 1000, weight = 10, color = "navy", label = vert_import$name )%>%
+      addPolylines(data = edges_import, weight = filtered_by_product$percent_value, label = filtered_by_product$percent_value)%>%
+      addMarkers(holder_coordinates$Long, holder_coordinates$Lat,
+                 icon = list(
+                   iconUrl = 'marker.png',
+                   iconSize = c(25, 25)))
+  })
 }
 
 
