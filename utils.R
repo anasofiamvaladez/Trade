@@ -1,4 +1,10 @@
+
+#You have loaded plyr after dplyr - this is likely to cause problems.
+#If you need functions from both plyr and dplyr, please load plyr first, then dplyr:
+
 library(tidyverse)
+library(plyr)
+library(dplyr)
 library(igraph)
 library(maps)
 library(geosphere)
@@ -7,7 +13,9 @@ library(leaflet)
 library(maptools)
 library(sp)
 library(png)
-library(plyr)
+
+
+
 
 official_names <- c("Bosnia Herzegovina", "Br. Virgin Isds",  "Cabo Verde", 
                     "Central African Rep.", "Christmas Isds", "Dem. People's Rep. of Korea", 
@@ -35,13 +43,15 @@ names <- c("Bosnia and Herzegovina", "British Virgin Islands",  "Cape Verde",
 
 
 COUNTRY_EQ <- data.frame(official_names, names, stringsAsFactors=FALSE)
-COORDINATES_C <- read_csv("../lat_lon_country.csv")
+COORDINATES_C <- read_csv("lat_lon_country.csv")
 
 
 
 #function that changes the names of countries from official to usual, filters
 #for world, computes the share of the us value/and volume by country, and
 #arranges the order of the colums
+
+
 arrange_db <- function(data, country_names=COUNTRY_EQ) {
   for (i in 1:nrow(country_names)) {
     data$From[data$From == country_names$official_names[i]] <- country_names$names[i]
@@ -59,7 +69,8 @@ arrange_db <- function(data, country_names=COUNTRY_EQ) {
 
 #get the list of unique countries that export the product and its location
 get_geo_nodes <- function(data, location_file = COORDINATES_C) {
-  countries_from <- unique(data[, "From"]) %>% 
+  countries_from <- unique(data[, "From"]) %>%
+    #new_name = old_name
     dplyr::rename(country = From)
   countries_to <- unique(data[, "To"]) %>%
     dplyr::rename(country = To)
@@ -71,22 +82,9 @@ get_geo_nodes <- function(data, location_file = COORDINATES_C) {
                                by.y = "name")
 }
 
-generate_graphos <- function(edges_db, nodes_db) {
-  nodes <- graph.data.frame(edges_db, directed=TRUE, nodes_db)
-  network <- get.data.frame(nodes, "both")
-  vert <- network$vertices
-  coordinates(vert) <- ~longitude + latitude
-  edges <- network$edges
-  edges <- lapply(1:nrow(edges), function(i) {
-    as(rbind(vert[vert$name == edges[i, "from"], ],
-             vert[vert$name == edges[i, "to"], ]),
-       "SpatialLines")
-  })
-  for (i in seq_along(edges)) {
-    edges[[i]] <- spChFIDs(edges[[i]], as.character(i))
-  }
-  edges <- do.call(rbind, edges)
-  return(c(vert, edges))
-}
+
+
+
+
 
 
