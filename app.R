@@ -9,21 +9,26 @@
 
 library(shiny)
 library(shinydashboard)
+library(kableExtra)
 source("utils.R")
 library(dplyr)
 
+
 # Define UI (interface server) for application that draws a histogram
 ui <- dashboardPage(
-  dashboardHeader(title = "Trade flow of products in the Supply Chain"),
+  dashboardHeader(title = "World Trade Flows"),
   dashboardSidebar(),
   dashboardBody(
     # Boxes need to be put in a row (or column)
     fluidRow(
+      h1(paste0("Supply Chain: World Info on Semiconductors Industry"), align="center", 
+         style = "font-family: 'Arial'; font-si16pt"),
+      h4(paste0("Please select the phase, products, and number of partners")),
       #Create a select list input control, "phase" debe ser parte del input de server
-      column(width = 6, selectInput("phase", "Step of the Supply Chain",
+      column(width = 4, selectInput("phase", "Phase of the Supply Chain",
                                     choices = c("Back end" = "Back end", 
                                                 "Front end" = "Front end"), width = NULL)),
-      column(width = 6, selectInput("fraction", "Top X partners",
+      column(width = 4, selectInput("fraction", "Top X partners",
                                     choices = c("10" = 10, 
                                                 "50" = 50,
                                                 "100" = 100,
@@ -31,9 +36,13 @@ ui <- dashboardPage(
                                                 "500" = 500
                                                 ), width = NULL)),
       #products debe ser parte del output de server
-      column(width = 6, box(uiOutput("products"), width = NULL))),
-    #Use leafletOutput() to create a UI element, and renderLeaflet() to render the map widget.
-    column(width = 12, box(leafletOutput("map"), width = NULL)
+      column(width = 4, uiOutput("products")),
+      #Use leafletOutput() to create a UI element, and renderLeaflet() to render the map widget.
+      h2(paste0("Map: Export flows")),
+      column(width = 12, box(leafletOutput("map"), width = NULL)),
+      h2(paste0("Trade Information Table")),
+      column(width = 12, box(tableOutput("statstable"), width = NULL))
+             
     )
   )
 )
@@ -60,8 +69,8 @@ server <- function(input, output) {
   output$products <- renderUI({
     selectInput(inputId="choose_product",
                 #titulo del botón
-                label="Select product",
-                choices = values_react$lst_uprod)
+                label="Product",
+                choices = values_react$lst_uprod, width = NULL)
   })
   
   output$map <- renderLeaflet({
@@ -70,8 +79,8 @@ server <- function(input, output) {
       mutate(percent_value = TradeValue / sum(TradeValue) * 100, 
              percent_quant = TradeQuantity / sum(TradeQuantity) * 100)
     filtered_by_product <- head(arrange(filtered_by_product, desc(TradeValue)), n = input$fraction)
-    vertices <- get_geo_nodes(filtered_by_product)
-    nodes_import <- graph.data.frame(filtered_by_product, directed=TRUE, vertices)
+    countries <- get_geo_nodes(filtered_by_product)
+    nodes_import <- graph.data.frame(filtered_by_product, directed=TRUE, countries)
     network_import <- get.data.frame(nodes_import, "both")
     vert_import <- network_import$vertices
     coordinates(vert_import) <- ~longitude + latitude
@@ -81,6 +90,7 @@ server <- function(input, output) {
                vert_import[vert_import$name == edges_import[i, "to"], ]),
          "SpatialLines")
     })
+    
     for (i in seq_along(edges_import)) {
       #When the feature IDs need to be changed in SpatialLines* or SpatialPolygons*
       #objects, these methods may be used
@@ -109,6 +119,17 @@ server <- function(input, output) {
                    iconUrl = 'marker.png',
                    iconSize = c(25, 25)))
   })
+  
+  output$statstable <- function() {
+    filtered_by_product <- values_react$filtered_db %>% filter(cmdCode == input$choose_product) %>%
+      #mutate() adds new variables and preserves existing ones
+      mutate(percent_value = TradeValue / sum(TradeValue) * 100, 
+             percent_quant = TradeQuantity / sum(TradeQuantity) * 100)
+    stats_table <- gen_stats_table(filtered_by_product) %>%
+      knitr::kable("html") %>%
+      kable_styling("striped", full_width = F)
+  }
+    
 }
 
 
