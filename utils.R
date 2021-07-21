@@ -58,7 +58,7 @@ arrange_db <- function(data, country_names=COUNTRY_EQ) {
     data$To[data$To == country_names$official_names[i]] <- country_names$names[i]
   }
   
-  #delete World, create percentages for value and quantity, and arrange the order
+  #delete World, create percentages, and arrange the order
   final_db <- data %>%
     dplyr::filter(From != "World") %>%
     dplyr::filter(To != "World") %>%
@@ -82,9 +82,21 @@ get_geo_nodes <- function(data, location_file = COORDINATES_C) {
                                by.y = "name")
 }
 
-
-
-
+gen_stats_table <- function(data_base) {
+  final_db <- data_base %>% 
+    select(From, To, cmdCode, cmdDescE, percent_value, percent_quant) %>% 
+    arrange(desc(percent_value)) %>%
+    slice_head(n=10) %>%
+    dplyr::rename(
+      Export_country = From,
+      Import_country = To,
+      Product_code = cmdCode,
+      Product_description = cmdDescE,
+      US_val_percent = percent_value,
+      Quantity_percent = percent_quant
+    )
+  return(final_db)
+}
 
 
 
