@@ -1,3 +1,4 @@
+
 #
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above.
@@ -12,6 +13,8 @@ library(shinydashboard)
 library(kableExtra)
 source("utils.R")
 library(dplyr)
+library(stringr)
+
 
 
 # Define UI (interface server) for application that draws a histogram
@@ -34,7 +37,7 @@ ui <- dashboardPage(
                                                 "100" = 100,
                                                 "250" = 250,
                                                 "500" = 500
-                                                ), width = NULL)),
+                                    ), width = NULL)),
       #products debe ser parte del output de server
       column(width = 4, uiOutput("products")),
       #Use leafletOutput() to create a UI element, and renderLeaflet() to render the map widget.
@@ -42,7 +45,7 @@ ui <- dashboardPage(
       column(width = 12, box(leafletOutput("map"), width = NULL)),
       h2(paste0("Trade Information Table")),
       column(width = 12, box(tableOutput("statstable"), width = NULL))
-             
+      
     )
   )
 )
@@ -55,6 +58,7 @@ server <- function(input, output) {
   
   #Cambiar nombres de los paises y ordenar database
   trade_db <- read_csv("db_trade_f.csv") %>% arrange_db()
+  trade_db <- add_description(trade_db)
   
   
   #Create a reactive observer
@@ -62,7 +66,7 @@ server <- function(input, output) {
     values_react$phase <- input$phase
     values_react$fraction <- input$fraction
     values_react$filtered_db <- trade_db %>% filter(PHASE == values_react$phase)
-    values_react$lst_uprod <- unique(values_react$filtered_db[, "cmdCode"])
+    values_react$lst_uprod <- unique(values_react$filtered_db[, "codes_descrip"])
   })
   
   
@@ -74,7 +78,7 @@ server <- function(input, output) {
   })
   
   output$map <- renderLeaflet({
-    filtered_by_product <- values_react$filtered_db %>% filter(cmdCode == input$choose_product) %>%
+    filtered_by_product <- values_react$filtered_db %>% filter(codes_descrip == input$choose_product) %>%
       #mutate() adds new variables and preserves existing ones
       mutate(percent_value = TradeValue / sum(TradeValue) * 100, 
              percent_quant = TradeQuantity / sum(TradeQuantity) * 100)
@@ -121,7 +125,7 @@ server <- function(input, output) {
   })
   
   output$statstable <- function() {
-    filtered_by_product <- values_react$filtered_db %>% filter(cmdCode == input$choose_product) %>%
+    filtered_by_product <- values_react$filtered_db %>% filter(codes_descrip == input$choose_product) %>%
       #mutate() adds new variables and preserves existing ones
       mutate(percent_value = TradeValue / sum(TradeValue) * 100, 
              percent_quant = TradeQuantity / sum(TradeQuantity) * 100)
@@ -129,7 +133,7 @@ server <- function(input, output) {
       knitr::kable("html") %>%
       kable_styling("striped", full_width = F)
   }
-    
+  
 }
 
 
