@@ -17,6 +17,7 @@ library(png)
 
 
 
+
 official_names <- c("Bosnia Herzegovina", "Br. Virgin Isds",  "Cabo Verde", 
                     "Central African Rep.", "Christmas Isds", "Dem. People's Rep. of Korea", 
                     "Dominican Rep.", "Holy See (Vatican City State)", "Lao People's Dem. Rep.", 
@@ -95,6 +96,12 @@ gen_stats_table <- function(data_base) {
       US_val_percent = percent_value,
       Quantity_percent = percent_quant
     )
+  return(final_db)
+}
+
+add_description <- function(data_base) {
+  final_db <- data_base %>% 
+    unite(codes_descrip, cmdCode, Naic_descrip, sep = " ", remove = FALSE)
   return(final_db)
 }
 
