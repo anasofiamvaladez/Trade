@@ -33,7 +33,7 @@ ui <- dashboardPage(
                                                 "Front end" = "Front end"), width = NULL)),
       column(width = 4, selectInput("fraction", "Top X partners",
                                     choices = c("10" = 10, 
-                                                "50" = 50,
+                                                "25" = 25,
                                                 "100" = 100,
                                                 "250" = 250,
                                                 "500" = 500
