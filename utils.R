@@ -37,7 +37,7 @@ names <- c("Bosnia and Herzegovina", "British Virgin Islands",  "Cape Verde",
            "Vietnam", "Bolivia", "United States", "Tanzania", "Moldova", 
            "Wallis and Futuna", "Cocos Islands", "Czech Republic", "Sudan", 
            "Cayman Islands", "British Indian Ocean Territory", "Falkland Islands [Islas Malvinas]",
-           "China", "China", "Brunei", "Cook Islands", "Marshall Islands", "Micronesia",
+           "Hong Kong", "Macao", "Brunei", "Cook Islands", "Marshall Islands", "Micronesia",
            "French Southern Territories", "United States", "Saint Barthélemy",
            "Curaçao", "Côte d'Ivoire")
 
@@ -85,7 +85,7 @@ get_geo_nodes <- function(data, location_file = COORDINATES_C) {
 
 gen_stats_table <- function(data_base) {
   final_db <- data_base %>% 
-    select(From, To, codes_descrip, Naic_descrip, TradeValue, percent_value, COMPLEXITY) %>% 
+    select(From, To, codes_descrip, Naic_descrip,cmdDescE,TradeValue, percent_value, COMPLEXITY) %>% 
     #arrange(desc(percent_value)) %>%
     #slice_head(n=10) %>%s
     dplyr::rename(
