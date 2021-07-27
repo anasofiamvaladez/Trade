@@ -18,42 +18,95 @@ library(stringr)
 
 
 # Define UI (interface server) for application that draws a histogram
-ui <- dashboardPage(
-  dashboardHeader(title = "World Trade Flows"),
-  dashboardSidebar(),
-  dashboardBody(
-    # Boxes need to be put in a row (or column)
-    fluidRow(
-      h1(paste0("Supply Chain: World Info on Semiconductors Industry"), align="center", 
-         style = "font-family: 'Arial'; font-si16pt"),
-      h4(paste0("Please select the phase, products, and number of partners")),
-      #Create a select list input control, "phase" debe ser parte del input de server
-      column(width = 4, selectInput("phase", "Phase of the Supply Chain",
-                                    choices = c("Back end" = "Back end", 
-                                                "Front end" = "Front end"), width = NULL)),
-      column(width = 4, selectInput("fraction", "Top X partners",
-                                    choices = c("10" = 10, 
-                                                "25" = 25,
-                                                "100" = 100,
-                                                "250" = 250,
-                                                "500" = 500
-                                    ), width = NULL)),
-      #products debe ser parte del output de server
-      column(width = 4, uiOutput("products")),
-      #Use leafletOutput() to create a UI element, and renderLeaflet() to render the map widget.
-      h2(paste0("Map: Export flows")),
-      column(width = 12, box(leafletOutput("map"), width = NULL)),
-      h2(paste0("Trade Information Table")),
-      column(width = 12, box(tableOutput("statstable"), width = NULL))
-      
-    )
-  )
-)
 
-# Define server logic required to draw a histogram
+header <- 
+  dashboardHeader( title = HTML("Mapping Supply Chains"), 
+                   disable = FALSE, 
+                   titleWidth  = 550)
+
+header$children[[2]]$children[[2]] <- header$children[[2]]$children[[1]]
+header$children[[2]]$children[[1]] <- tags$a(href='https://www.gob.mx/se/',
+                                             tags$img(src='se_logo.png'),
+                                             target = '_blank')
+
+
+siderbar <- 
+  dashboardSidebar(width = 250,
+                   sidebarMenu(
+                     id = 'sidebar', 
+                     style = "position: relative; overflow: visible;",
+                     #first tab: general statistics for all the supply chains
+                     menuItem("Statistics of Supply Chains", tabName = "all_statistics",
+                              icon = icon('chart-line'), badgeColor = 'green'),
+                     #second tab: map and specific information of the Semiconductors Supply Chain
+                     menuItem("Semiconductors Supply Chain", tabName = "semiconductors",
+                              icon = icon('microchip'), badgeColor = 'green'),
+                     #third tab: map and specific information of the Batteries Supply Chain
+                     menuItem("Batteries Supply Chain", tabName = "batteries",
+                              icon = icon('battery-full'), badgeColor = 'green'),
+                     #fourth tab: map and specific information of the Pharmaceutical Supply Chain
+                     menuItem("Pharmaceutical Supply Chain", tabName = "pharma",
+                              icon = icon('file-prescription'), badgeColor = 'green')
+                   ))
+
+body <- dashboardBody(
+  tags$head(
+    tags$script("document.title = 'Mexico: Supply Chain Info'"),
+    tags$style(HTML('
+                       /* logo */
+                       .skin-blue .main-header .logo {
+                       background-color: #696969;
+                       }
+                       /* logo when hovered */
+                       .skin-blue .main-header .logo:hover {
+                       background-color: #696969;
+                       }
+                       /* navbar (rest of the header) */
+                       .skin-blue .main-header .navbar {
+                       background-color: #696969;
+                       }
+                       /* active selected tab in the sidebarmenu */
+                       .skin-blue .main-sidebar .sidebar .sidebar-menu .active a{
+                       background-color: #696969;
+                                 }
+                       ')
+    ),
+    ## to not show error message in shiny
+    tags$style( HTML(".shiny-output-error { visibility: hidden; }") ),
+    tags$style( HTML(".shiny-output-error:before { visibility: hidden; }") )),
+  tabItems(
+    tabItem(tabName = 'semiconductors',
+            fluidRow(
+              h1(paste0("Supply Chain: World Info on Semiconductors Industry"), align="center", 
+                 style = "font-family: 'Arial'; font-si16pt"),
+              h4(paste0("Select the phase, products, and number of partners")),
+              #Create a select list input control, "phase" debe ser parte del input de server
+              column(width = 4, selectInput("phase", "Phase of the Supply Chain",
+                                            choices = c("Back end" = "Back end", 
+                                                        "Front end" = "Front end"), width = NULL)),
+              column(width = 4, selectInput("fraction", "Top X partners",
+                                            choices = c("10" = 10, 
+                                                        "25" = 25,
+                                                        "100" = 100,
+                                                        "250" = 250,
+                                                        "500" = 500
+                                            ), width = NULL)),
+              #products debe ser parte del output de server
+              column(width = 4, uiOutput("products")),
+              #Use leafletOutput() to create a UI element, and renderLeaflet() to render the map widget.
+              h2(paste0("Map: Export flows")),
+              column(width = 12, box(leafletOutput("map"), width = NULL)),
+              h2(paste0("Trade Information Table")),
+              column(width = 12, box(tableOutput("statstable"), width = NULL))
+              
+            ))
+  ))
+
+ui <- dashboardPage(header, siderbar, body)
+
+
+
 server <- function(input, output) {
-  
-  #It is similar to a list, but with special capabilities for reactive programming
   values_react <- reactiveValues()
   
   #Cambiar nombres de los paises y ordenar database
@@ -133,10 +186,7 @@ server <- function(input, output) {
       knitr::kable("html") %>%
       kable_styling("striped", full_width = F)
   }
-  
 }
 
 
-
-# Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui, server)
