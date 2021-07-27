@@ -85,13 +85,14 @@ get_geo_nodes <- function(data, location_file = COORDINATES_C) {
 
 gen_stats_table <- function(data_base) {
   final_db <- data_base %>% 
-    select(From, To, codes_descrip, Naic_descrip,cmdDescE,TradeValue, percent_value, COMPLEXITY) %>% 
+    select(From, To, codes_descrip, cmdDescE,Naic_descrip, TradeValue, percent_value, COMPLEXITY) %>% 
     #arrange(desc(percent_value)) %>%
     #slice_head(n=10) %>%s
     dplyr::rename(
       Export_country = From,
       Import_country = To,
       Code_descripton = codes_descrip,
+      HS_description = cmdDescE,
       NAIC_description = Naic_descrip,
       US_value = TradeValue,
       US_val_percent = percent_value,
@@ -102,7 +103,7 @@ gen_stats_table <- function(data_base) {
 
 add_description <- function(data_base) {
   final_db <- data_base %>% 
-    unite(codes_descrip, cmdCode, Naic_descrip, sep = " ", remove = FALSE)
+    unite(codes_descrip, cmdCode, cmdDescE, sep = " ", remove = FALSE)
   return(final_db)
 }
 
