@@ -85,16 +85,17 @@ get_geo_nodes <- function(data, location_file = COORDINATES_C) {
 
 gen_stats_table <- function(data_base) {
   final_db <- data_base %>% 
-    select(From, To, cmdCode, cmdDescE, percent_value, percent_quant) %>% 
-    arrange(desc(percent_value)) %>%
-    slice_head(n=10) %>%
+    select(From, To, codes_descrip, Naic_descrip, TradeValue, percent_value, COMPLEXITY) %>% 
+    #arrange(desc(percent_value)) %>%
+    #slice_head(n=10) %>%s
     dplyr::rename(
       Export_country = From,
       Import_country = To,
-      Product_code = cmdCode,
-      Product_description = cmdDescE,
+      Code_descripton = codes_descrip,
+      NAIC_description = Naic_descrip,
+      US_value = TradeValue,
       US_val_percent = percent_value,
-      Quantity_percent = percent_quant
+      Complexity_index = COMPLEXITY
     )
   return(final_db)
 }

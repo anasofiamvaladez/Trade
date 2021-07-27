@@ -84,6 +84,8 @@ body <- dashboardBody(
               column(width = 4, selectInput("phase", "Phase of the Supply Chain",
                                             choices = c("Back end" = "Back end", 
                                                         "Front end" = "Front end"), width = NULL)),
+              #products debe ser parte del output de server
+              column(width = 4, uiOutput("products")),
               column(width = 4, selectInput("fraction", "Top X partners",
                                             choices = c("10" = 10, 
                                                         "25" = 25,
@@ -91,8 +93,6 @@ body <- dashboardBody(
                                                         "250" = 250,
                                                         "500" = 500
                                             ), width = NULL)),
-              #products debe ser parte del output de server
-              column(width = 4, uiOutput("products")),
               #Use leafletOutput() to create a UI element, and renderLeaflet() to render the map widget.
               h2(paste0("Map: Export flows")),
               column(width = 12, box(leafletOutput("map"), width = NULL)),
@@ -182,6 +182,8 @@ server <- function(input, output) {
       #mutate() adds new variables and preserves existing ones
       mutate(percent_value = TradeValue / sum(TradeValue) * 100, 
              percent_quant = TradeQuantity / sum(TradeQuantity) * 100)
+    #added to modify the number of relationships in the table
+    filtered_by_product <- head(arrange(filtered_by_product, desc(TradeValue)), n = input$fraction)
     stats_table <- gen_stats_table(filtered_by_product) %>%
       knitr::kable("html") %>%
       kable_styling("striped", full_width = F)
