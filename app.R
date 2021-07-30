@@ -14,7 +14,7 @@ library(kableExtra)
 source("utils.R")
 library(dplyr)
 library(stringr)
-
+library(leaflet)
 
 
 # Define UI (interface server) for application that draws a histogram
@@ -53,23 +53,23 @@ body <- dashboardBody(
   tags$head(
     tags$script("document.title = 'Mexico: Supply Chain Info'"),
     tags$style(HTML('
-                       /* logo */
-                       .skin-blue .main-header .logo {
-                       background-color: #696969;
-                       }
-                       /* logo when hovered */
-                       .skin-blue .main-header .logo:hover {
-                       background-color: #696969;
-                       }
-                       /* navbar (rest of the header) */
-                       .skin-blue .main-header .navbar {
-                       background-color: #696969;
-                       }
-                       /* active selected tab in the sidebarmenu */
-                       .skin-blue .main-sidebar .sidebar .sidebar-menu .active a{
-                       background-color: #696969;
-                                 }
-                       ')
+                    /* logo */
+                    .skin-blue .main-header .logo {
+                    background-color: #696969;
+                    }
+                    /* logo when hovered */
+                    .skin-blue .main-header .logo:hover {
+                    background-color: #696969;
+                    }
+                    /* navbar (rest of the header) */
+                    .skin-blue .main-header .navbar {
+                    background-color: #696969;
+                    }
+                    /* active selected tab in the sidebarmenu */
+                    .skin-blue .main-sidebar .sidebar .sidebar-menu .active a{
+                    background-color: #696969;
+                    }
+                    ')
     ),
     ## to not show error message in shiny
     tags$style( HTML(".shiny-output-error { visibility: hidden; }") ),
@@ -159,18 +159,20 @@ server <- function(input, output) {
     holder_coordinates <- matrix(NA, nrow = length(edges_import), ncol = 2)
     
     for (i in seq_along(edges_import)) {
-      holder_coordinates[i,1] = edges_import@lines[[i]]@Lines[1][[1]]@coords[2]
-      holder_coordinates[i,2] = edges_import@lines[[i]]@Lines[1][[1]]@coords[4]
+      holder_coordinates[i,1] = edges_import@lines[[i]]@Lines[1][[1]]@coords[1]
+      holder_coordinates[i,2] = edges_import@lines[[i]]@Lines[1][[1]]@coords[3]
     }
     
     holder_coordinates <- as.data.frame(holder_coordinates)
     colnames(holder_coordinates) <- c("Long", "Lat")
     ##
     
+    content <- paste(round(filtered_by_product$percent_value, 2), "Exporter:", filtered_by_product$From, sep = " ")
+    
     leaflet(vert_import) %>%
       addTiles() %>%
       addCircles(data = vert_import, radius = 1000, weight = 10, color = "navy", label = vert_import$name )%>%
-      addPolylines(data = edges_import, weight = filtered_by_product$percent_value, label = filtered_by_product$percent_value)%>%
+      addPolylines(data = edges_import, weight = filtered_by_product$percent_value, label = content, color = filtered_by_product$is_duplicated)%>%
       addMarkers(holder_coordinates$Long, holder_coordinates$Lat,
                  icon = list(
                    iconUrl = 'marker.png',
