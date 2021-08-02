@@ -107,5 +107,62 @@ add_description <- function(data_base) {
   return(final_db)
 }
 
+gen_top_ten <- function(data_base, product) {
+  
+  top_ten <- data_base %>%
+    filter(codes_descrip == product) %>%
+    mutate(percent_value = TradeValue / sum(TradeValue) * 100,
+           percent_quant = TradeQuantity / sum(TradeQuantity) * 100) %>%
+    select(From, percent_value) %>% group_by(From) %>%
+    summarise_at(vars(percent_value), list(percent_sum=sum)) %>%
+    arrange(-percent_sum) %>% slice_head(n=10) %>%
+    mutate(per_cumsum = cumsum(percent_sum)) %>%
+    dplyr::rename(Country = From)
+  return(top_ten)
+}
+
+
+gen_graph <- function(data_base, product) {
+  
+  top_ten <- gen_top_ten(data_base, product)
+  
+  blank_theme <- theme_minimal()+
+    theme(
+      axis.title.x = element_blank(), axis.title.y = element_blank(),
+      panel.border = element_blank(), panel.grid=element_blank(),
+      axis.ticks = element_blank(), plot.title=element_text(size=14, face="bold")
+    )
+  
+  pie <- ggplot(top_ten, aes(x = "", y=percent_sum, fill = Country)) + 
+    geom_col() +
+    geom_text(aes(label = paste0(round(percent_sum, 2), "%"), x=1.2), 
+              position=position_stack(vjust=0.5)) + 
+    blank_theme + 
+    theme(axis.text.x=element_blank(), 
+          plot.title = element_text(hjust=0.5),
+          plot.subtitle = element_text(hjust=0.5)) +
+    labs(fill="Country", 
+         x=NULL, 
+         y=NULL, 
+         title="Share of exports",
+         subtitle="among 10 top countries",
+         caption="Source: UN COMTRADE")
+  
+  pie + 
+    coord_polar(theta = "y") + 
+    scale_fill_brewer(palette="Spectral")
+  
+}
+
+gen_country_info <- function(database, country, product) {
+  country <- database %>% filter(From == country) %>%
+    filter(codes_descrip == product) %>%
+    mutate(percent_country = TradeValue / sum(TradeValue) * 100) %>%
+    select(To, percent_country) %>%
+    dplyr::rename(Country = To) %>%
+    arrange(percent_country)
+  return(country)  
+}
+
 
 

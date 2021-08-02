@@ -53,23 +53,23 @@ body <- dashboardBody(
   tags$head(
     tags$script("document.title = 'Mexico: Supply Chain Info'"),
     tags$style(HTML('
-                    /* logo */
-                    .skin-blue .main-header .logo {
-                    background-color: #696969;
-                    }
-                    /* logo when hovered */
-                    .skin-blue .main-header .logo:hover {
-                    background-color: #696969;
-                    }
-                    /* navbar (rest of the header) */
-                    .skin-blue .main-header .navbar {
-                    background-color: #696969;
-                    }
-                    /* active selected tab in the sidebarmenu */
-                    .skin-blue .main-sidebar .sidebar .sidebar-menu .active a{
-                    background-color: #696969;
-                    }
-                    ')
+                       /* logo */
+                       .skin-blue .main-header .logo {
+                       background-color: #696969;
+                       }
+                       /* logo when hovered */
+                       .skin-blue .main-header .logo:hover {
+                       background-color: #696969;
+                       }
+                       /* navbar (rest of the header) */
+                       .skin-blue .main-header .navbar {
+                       background-color: #696969;
+                       }
+                       /* active selected tab in the sidebarmenu */
+                       .skin-blue .main-sidebar .sidebar .sidebar-menu .active a{
+                       background-color: #696969;
+                                 }
+                       ')
     ),
     ## to not show error message in shiny
     tags$style( HTML(".shiny-output-error { visibility: hidden; }") ),
@@ -97,8 +97,11 @@ body <- dashboardBody(
               h2(paste0("Map: Export flows")),
               column(width = 12, box(leafletOutput("map"), width = NULL)),
               h2(paste0("Trade Information Table")),
-              column(width = 12, box(tableOutput("statstable"), width = NULL))
-              
+              column(width = 12, box(tableOutput("statstable"), width = NULL)),
+              column(width = 6),
+              column(width = 6, uiOutput("topten_country")),
+              column(width = 6, box(plotOutput("visual"), width = NULL)),
+              column(width = 6, box(tableOutput("country_info"), width = NULL))
             ))
   ))
 
@@ -113,15 +116,26 @@ server <- function(input, output) {
   trade_db <- read_csv("db_trade_f.csv") %>% arrange_db()
   trade_db <- add_description(trade_db)
   
-  
   #Create a reactive observer
   observe({
     values_react$phase <- input$phase
     values_react$fraction <- input$fraction
     values_react$filtered_db <- trade_db %>% filter(PHASE == values_react$phase)
     values_react$lst_uprod <- unique(values_react$filtered_db[, "codes_descrip"])
+    values_react$selected_product <- input$choose_product
   })
   
+  observeEvent(input$choose_product, {
+    values_react$top_ten <- gen_top_ten(values_react$filtered_db, values_react$selected_product) %>%
+      select(Country)
+  })
+  
+  output$topten_country <- renderUI({
+    selectInput(inputId="topten_country",
+                #titulo del botón
+                label="Select country",
+                choices = values_react$top_ten, width = NULL)
+  })
   
   output$products <- renderUI({
     selectInput(inputId="choose_product",
@@ -190,6 +204,19 @@ server <- function(input, output) {
       knitr::kable("html") %>%
       kable_styling("striped", full_width = F)
   }
+  
+  output$visual <- renderPlot({
+    gen_graph(values_react$filtered_db, input$choose_product)
+  })
+  
+  output$country_info <- function() {
+    country_table <- gen_country_info(values_react$filtered_db, 
+                                      input$topten_country, input$choose_product)
+    country_table %>%
+      knitr::kable("html") %>%
+      kable_styling("striped", full_width = F)
+  }
+  
 }
 
 
