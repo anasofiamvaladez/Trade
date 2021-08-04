@@ -53,23 +53,23 @@ body <- dashboardBody(
   tags$head(
     tags$script("document.title = 'Mexico: Supply Chain Info'"),
     tags$style(HTML('
-                       /* logo */
-                       .skin-blue .main-header .logo {
-                       background-color: #696969;
-                       }
-                       /* logo when hovered */
-                       .skin-blue .main-header .logo:hover {
-                       background-color: #696969;
-                       }
-                       /* navbar (rest of the header) */
-                       .skin-blue .main-header .navbar {
-                       background-color: #696969;
-                       }
-                       /* active selected tab in the sidebarmenu */
-                       .skin-blue .main-sidebar .sidebar .sidebar-menu .active a{
-                       background-color: #696969;
-                                 }
-                       ')
+                    /* logo */
+                    .skin-blue .main-header .logo {
+                    background-color: #696969;
+                    }
+                    /* logo when hovered */
+                    .skin-blue .main-header .logo:hover {
+                    background-color: #696969;
+                    }
+                    /* navbar (rest of the header) */
+                    .skin-blue .main-header .navbar {
+                    background-color: #696969;
+                    }
+                    /* active selected tab in the sidebarmenu */
+                    .skin-blue .main-sidebar .sidebar .sidebar-menu .active a{
+                    background-color: #696969;
+                    }
+                    ')
     ),
     ## to not show error message in shiny
     tags$style( HTML(".shiny-output-error { visibility: hidden; }") ),
@@ -201,7 +201,7 @@ server <- function(input, output) {
     #added to modify the number of relationships in the table
     filtered_by_product <- head(arrange(filtered_by_product, desc(TradeValue)), n = input$fraction)
     stats_table <- gen_stats_table(filtered_by_product) %>%
-      knitr::kable("html") %>%
+      knitr::kable("html") %>% 
       kable_styling("striped", full_width = F)
   }
   
@@ -214,9 +214,10 @@ server <- function(input, output) {
                                       input$topten_country, input$choose_product)
     country_table %>%
       knitr::kable("html") %>%
-      kable_styling("striped", full_width = F)
+      kable_styling("striped", full_width = F) %>% 
+      kable_paper() %>%
+      scroll_box(width = "500px", height = "400px")
   }
-  
 }
 
 
