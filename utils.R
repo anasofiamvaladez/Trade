@@ -109,16 +109,40 @@ add_description <- function(data_base) {
 
 gen_top_ten <- function(data_base, product) {
   
-  top_ten <- data_base %>%
+    top <- data_base %>%
     filter(codes_descrip == product) %>%
     mutate(percent_value = TradeValue / sum(TradeValue) * 100,
            percent_quant = TradeQuantity / sum(TradeQuantity) * 100) %>%
     select(From, percent_value) %>% group_by(From) %>%
     summarise_at(vars(percent_value), list(percent_sum=sum)) %>%
-    arrange(-percent_sum) %>% slice_head(n=10) %>%
-    mutate(per_cumsum = cumsum(percent_sum)) %>%
-    dplyr::rename(Country = From)
-  return(top_ten)
+    arrange(-percent_sum)
+    
+    top_ten <- top %>%
+      slice_head(n=10)
+  
+  if ("Mexico" %in% top_ten$From) {
+    
+      top_ten <- top_ten %>%
+      mutate(per_cumsum = round(cumsum(percent_sum)), 3) %>%
+      dplyr::rename(Country = From)
+    
+    return(top_ten)
+  }
+  
+  else {
+      mexico <- top %>%
+       filter(From == "Mexico")
+      
+      top_ten <- top %>%
+        slice_head(n=9)
+      
+      top_ten <- rbind(mexico, top_ten) %>%
+        mutate(per_cumsum = round(cumsum(percent_sum)), 3) %>%
+        dplyr::rename(Country = From)
+      
+      return(top_ten)
+
+  }
 }
 
 
@@ -157,12 +181,13 @@ gen_graph <- function(data_base, product) {
 gen_country_info <- function(database, country, product) {
   country <- database %>% filter(From == country) %>%
     filter(codes_descrip == product) %>%
-    mutate(percent_country = TradeValue / sum(TradeValue) * 100) %>%
+    mutate(percent_country = round((TradeValue / sum(TradeValue) * 100), 3)) %>%
     select(To, percent_country) %>%
     dplyr::rename(Country = To) %>%
-    arrange(percent_country)
+    arrange(desc(percent_country))
   return(country)  
 }
+
 
 
 
