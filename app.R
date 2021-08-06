@@ -75,11 +75,34 @@ body <- dashboardBody(
     tags$style( HTML(".shiny-output-error { visibility: hidden; }") ),
     tags$style( HTML(".shiny-output-error:before { visibility: hidden; }") )),
   tabItems(
-    tabItem(tabName = 'semiconductors',
+    tabItem(tabName = 'all_statistics',
+            h1(paste0("Supply Chain of the Semiconductors Industry"), align ="center", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            h2(paste0("Data overview"), align="center", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            h3(paste0("Semiconductors Supply Chain by Phase"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              h1(paste0("Supply Chain: World Info on Semiconductors Industry"), align="center", 
-                 style = "font-family: 'Arial'; font-si16pt"),
-              h4(paste0("Select the phase, products, and number of partners")),
+              valueBoxOutput('be_box'), 
+              valueBoxOutput('fe_box')
+            ),
+            h3(paste0("10 most exported products of the Semiconductors Supply Industry"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              column(width = 12, box(tableOutput("table_all_products"), width = NULL)),
+            ),
+            h3(paste0("Top 10 exporting countries: Semiconductors Supply Industry"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              column(width = 12, box(tableOutput("table_all_countries"), width = NULL)),
+            )
+            ),
+    tabItem(tabName = 'semiconductors',
+            h1(paste0("Supply Chain: World Info on Semiconductors Industry"), align="center", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            h2(paste0("Select the phase, products, and number of partners"), align = "justify",
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
               #Create a select list input control, "phase" debe ser parte del input de server
               column(width = 4, selectInput("phase", "Phase of the Supply Chain",
                                             choices = c("Back end" = "Back end", 
@@ -94,12 +117,17 @@ body <- dashboardBody(
                                                         "500" = 500
                                             ), width = NULL)),
               #Use leafletOutput() to create a UI element, and renderLeaflet() to render the map widget.
-              h2(paste0("Map: Export flows")),
+              h2(paste0("Map: Export flows"), align = 'justify', 
+                 style = "font-family: 'Arial'; font-si16pt"),
               column(width = 12, box(leafletOutput("map"), width = NULL)),
-              h2(paste0("Trade Information Table")),
+              h2(paste0("Trade Information Table"), align = 'justify', 
+                 style = "font-family: 'Arial'; font-si16pt"),
               column(width = 12, box(tableOutput("statstable"), width = NULL)),
+              h2(textOutput("product_text"), align = 'justify', 
+                 style = "font-family: 'Arial'; font-si16pt"),
               column(width = 6),
               column(width = 6, uiOutput("topten_country")),
+              h4(textOutput("info_text")),
               column(width = 6, box(plotOutput("visual"), width = NULL)),
               column(width = 6, box(tableOutput("country_info"), width = NULL))
             ))
@@ -110,11 +138,67 @@ ui <- dashboardPage(header, siderbar, body)
 
 
 server <- function(input, output) {
+  #General industry information
+  trade_db <- read_csv("db_trade_f.csv") %>% arrange_db()
+  trade_db <- add_description(trade_db)
+  
+      #create two databases: back and front end
+  back_end <- trade_db %>% filter(PHASE == "Back end")
+  front_end <- trade_db %>% filter(PHASE == "Front end")
+  
+      #create boxes to show the value of the phase of the production 
+  output$fe_box <- renderValueBox({
+    valueBox(
+      VB_style( paste0( '$',format(sum(front_end$TradeValue)/1000000,big.mark=','), " m" ),  "font-size: 60%;"  ),
+      VB_style( paste0("Front End Phase (", round(sum(front_end$TradeValue)/sum(trade_db$TradeValue)*100,1) ,"%)")  ), 
+      icon = icon('front', lib = 'glyphicon'), #icon("sign-in"),
+      color = "navy",
+      width = 6
+    )
+  })
+  
+  output$be_box <- renderValueBox({
+    valueBox(
+      VB_style( paste0( '$',format(sum(back_end$TradeValue)/1000000,big.mark=','), " m" ),  "font-size: 60%;"  ),
+      VB_style( paste0("Back End Phase (", round(sum(back_end$TradeValue)/sum(trade_db$TradeValue)*100,1) ,"%)")  ), 
+      icon = icon('back', lib = 'glyphicon'), #icon("sign-in"),
+      color = "navy", 
+      width = 6
+    )
+  })
+  
+  output$table_all_products <- function() {
+    top_all_products <- trade_db %>% group_by(codes_descrip) %>%
+      summarise_at(vars(TradeValue), list(TradeValue=sum)) %>%
+      arrange(-TradeValue) %>%
+      mutate(percent_value = round(TradeValue / sum(TradeValue) * 100, 2)) %>%
+      slice_head(n=10)
+    c_change <- c(2)
+    top_all_products[c_change] <- lapply(top_all_products[c_change], formatC, big.mark= ',', decimal.mark =".", format = "f", digits = 2)
+    top_all_products %>%
+      knitr::kable("html") %>%
+      kable_styling("striped", full_width = F)
+  }
+  
+  output$table_all_countries <- function() {
+    top_all_countries <- trade_db %>% group_by(From) %>%
+      summarise_at(vars(TradeValue), list(TradeValue=sum)) %>%
+      arrange(-TradeValue) %>%
+      dplyr::rename(Export_Country = From) %>%
+      mutate(percent_value = round(TradeValue / sum(TradeValue) * 100, 2)) %>%
+      slice_head(n=10)
+    top_all_countries %>%
+      knitr::kable("html") %>%
+      kable_styling("striped", full_width = F)
+  }
+    
+  
+  
+  #semiconductors section
   values_react <- reactiveValues()
   
   #Cambiar nombres de los paises y ordenar database
-  trade_db <- read_csv("db_trade_f.csv") %>% arrange_db()
-  trade_db <- add_description(trade_db)
+  
   
   #Create a reactive observer
   observe({
@@ -196,7 +280,7 @@ server <- function(input, output) {
   output$statstable <- function() {
     filtered_by_product <- values_react$filtered_db %>% filter(codes_descrip == input$choose_product) %>%
       #mutate() adds new variables and preserves existing ones
-      mutate(percent_value = TradeValue / sum(TradeValue) * 100, 
+      mutate(percent_value = round(TradeValue / sum(TradeValue) * 100, 2), 
              percent_quant = TradeQuantity / sum(TradeQuantity) * 100)
     #added to modify the number of relationships in the table
     filtered_by_product <- head(arrange(filtered_by_product, desc(TradeValue)), n = input$fraction)
@@ -218,6 +302,20 @@ server <- function(input, output) {
       kable_paper() %>%
       scroll_box(width = "500px", height = "400px")
   }
+  
+  output$product_text <- renderText({
+    paste0("Top ten export countries of product: ", input$choose_product)
+  })
+  
+  output$info_text <- renderText({
+    country_table <- gen_country_info(values_react$filtered_db, 
+                                      input$topten_country, input$choose_product)
+    filtered_by_product <- values_react$filtered_db %>% filter(codes_descrip == input$choose_product)
+    paste0(input$topten_country, " exports to ", nrow(country_table), 
+           " countries. The total value of the exports is USD$", format(sum(country_table$TradeValue), big.mark = ','), 
+           " which represents ", round(sum(country_table$TradeValue)/sum(filtered_by_product$TradeValue)*100, 3), 
+           "% of the total word exports of product ", input$choose_product, ".")
+  })
 }
 
 

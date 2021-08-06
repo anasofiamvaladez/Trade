@@ -98,6 +98,8 @@ gen_stats_table <- function(data_base) {
       US_val_percent = percent_value,
       Complexity_index = COMPLEXITY
     )
+  c_change <- c(6)
+  final_db[c_change] <- lapply(final_db[c_change], formatC, big.mark= ',', decimal.mark =".", format = "f", digits = 2)
   return(final_db)
 }
 
@@ -182,11 +184,17 @@ gen_country_info <- function(database, country, product) {
   country <- database %>% filter(From == country) %>%
     filter(codes_descrip == product) %>%
     mutate(percent_country = round((TradeValue / sum(TradeValue) * 100), 3)) %>%
-    select(To, percent_country) %>%
+    select(To, TradeValue, percent_country) %>%
     dplyr::rename(Country = To) %>%
     arrange(desc(percent_country))
   return(country)  
 }
+
+#function taken from https://github.com/rstudio/shiny-gallery/blob/master/nz-trade-dash/helper_funs.R
+VB_style <- function(msg = 'Hello', style="font-size: 100%;"){
+  tags$p( msg , style = style )
+}
+
 
 
 
