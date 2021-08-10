@@ -1,4 +1,6 @@
 
+
+
 #You have loaded plyr after dplyr - this is likely to cause problems.
 #If you need functions from both plyr and dplyr, please load plyr first, then dplyr:
 
@@ -13,10 +15,9 @@ library(leaflet)
 library(maptools)
 library(sp)
 library(png)
-
-
-
-
+library(treemap)
+library(ggplot2)
+library(treemapify)
 
 official_names <- c("Bosnia Herzegovina", "Br. Virgin Isds",  "Cabo Verde", 
                     "Central African Rep.", "Christmas Isds", "Dem. People's Rep. of Korea", 
@@ -109,22 +110,23 @@ add_description <- function(data_base) {
   return(final_db)
 }
 
-gen_top_ten <- function(data_base, product) {
-  
-    top <- data_base %>%
+gen_top_ten <- function(data_base, product, importer_or_exporter) {
+  importer_or_exporter = enquo(importer_or_exporter)
+  top <- data_base %>%
     filter(codes_descrip == product) %>%
     mutate(percent_value = TradeValue / sum(TradeValue) * 100,
            percent_quant = TradeQuantity / sum(TradeQuantity) * 100) %>%
-    select(From, percent_value) %>% group_by(From) %>%
+    select( !!importer_or_exporter, percent_value) %>% group_by(!!importer_or_exporter) %>%
     summarise_at(vars(percent_value), list(percent_sum=sum)) %>%
-    arrange(-percent_sum)
-    
-    top_ten <- top %>%
-      slice_head(n=10)
+    arrange(-percent_sum) %>%
+    dplyr::rename(From = !!importer_or_exporter)
+  
+  top_ten <- top %>%
+    slice_head(n=10)
   
   if ("Mexico" %in% top_ten$From) {
     
-      top_ten <- top_ten %>%
+    top_ten <- top_ten %>%
       mutate(per_cumsum = round(cumsum(percent_sum)), 3) %>%
       dplyr::rename(Country = From)
     
@@ -132,68 +134,78 @@ gen_top_ten <- function(data_base, product) {
   }
   
   else {
-      mexico <- top %>%
-       filter(From == "Mexico")
-      
-      top_ten <- top %>%
-        slice_head(n=9)
-      
-      top_ten <- rbind(mexico, top_ten) %>%
-        mutate(per_cumsum = round(cumsum(percent_sum)), 3) %>%
-        dplyr::rename(Country = From)
-      
-      return(top_ten)
-
+    mexico <- top %>%
+      filter(From == "Mexico")
+    
+    top_ten <- top %>%
+      slice_head(n=9)
+    
+    top_ten <- rbind(mexico, top_ten) %>%
+      mutate(per_cumsum = round(cumsum(percent_sum)), 3) %>%
+      dplyr::rename(Country = From)
+    
+    return(top_ten)
+    
   }
 }
 
 
 gen_graph <- function(data_base, product) {
   
-  top_ten <- gen_top_ten(data_base, product)
+  top_ten <- gen_top_ten(data_base, product, From)
+  top_ten <- top_ten %>% mutate_if(is.numeric, ~round(., 2))
   
-  blank_theme <- theme_minimal()+
-    theme(
-      axis.title.x = element_blank(), axis.title.y = element_blank(),
-      panel.border = element_blank(), panel.grid=element_blank(),
-      axis.ticks = element_blank(), plot.title=element_text(size=14, face="bold")
-    )
+  square <- ggplot(top_ten, aes(area = percent_sum, fill = Country, label = paste(Country, percent_sum, sep = "\n"))) +
+    geom_treemap() +
+    geom_treemap_text(fontface = "italic", colour = "white", place = "centre", size = 10,
+                      grow = TRUE) 
   
-  pie <- ggplot(top_ten, aes(x = "", y=percent_sum, fill = Country)) + 
-    geom_col() +
-    geom_text(aes(label = paste0(round(percent_sum, 2), "%"), x=1.2), 
-              position=position_stack(vjust=0.5)) + 
-    blank_theme + 
-    theme(axis.text.x=element_blank(), 
-          plot.title = element_text(hjust=0.5),
-          plot.subtitle = element_text(hjust=0.5)) +
-    labs(fill="Country", 
-         x=NULL, 
-         y=NULL, 
-         title="Share of exports",
-         subtitle="among 10 top countries",
-         caption="Source: UN COMTRADE")
-  
-  pie + 
-    coord_polar(theta = "y") + 
-    scale_fill_brewer(palette="Spectral")
-  
+  square
 }
 
-gen_country_info <- function(database, country, product) {
-  country <- database %>% filter(From == country) %>%
-    filter(codes_descrip == product) %>%
-    mutate(percent_country = round((TradeValue / sum(TradeValue) * 100), 3)) %>%
-    select(To, TradeValue, percent_country) %>%
-    dplyr::rename(Country = To) %>%
-    arrange(desc(percent_country))
-  return(country)  
+gen_graph_imp <- function(data_base, product) {
+  
+  top_ten <- gen_top_ten(data_base, product, To)
+  top_ten <- top_ten %>% mutate_if(is.numeric, ~round(., 2))
+  
+  square <- ggplot(top_ten, aes(area = percent_sum, fill = Country, label = paste(Country, percent_sum, sep = "\n"))) +
+    geom_treemap() +
+    geom_treemap_text(fontface = "italic", colour = "white", place = "centre", size = 10,
+                      grow = TRUE) 
+  
+  square
 }
+
+gen_country_info <- function(database, country, product, importer_or_exporter) {
+  
+  if (importer_or_exporter == 'exporter') {
+      country <- database %>% filter(From == country) %>%
+          filter(codes_descrip == product) %>%
+          mutate(percent_country = round((TradeValue / sum(TradeValue) * 100), 3)) %>%
+          select(To, TradeValue, percent_country) %>%
+          dplyr::rename(Country = To) %>%
+          arrange(desc(percent_country))
+          return(country)  
+    
+  } else {
+    
+      country <- database %>% filter(To == country) %>%
+        filter(codes_descrip == product) %>%
+        mutate(percent_country = round((TradeValue / sum(TradeValue) * 100), 3)) %>%
+        select(From, TradeValue, percent_country) %>%
+        dplyr::rename(Country = From) %>%
+        arrange(desc(percent_country))
+      return(country)
+    
+  }
+}
+
 
 #function taken from https://github.com/rstudio/shiny-gallery/blob/master/nz-trade-dash/helper_funs.R
 VB_style <- function(msg = 'Hello', style="font-size: 100%;"){
   tags$p( msg , style = style )
 }
+
 
 
 
