@@ -1,4 +1,5 @@
 
+
 #
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above.
@@ -96,7 +97,7 @@ body <- dashboardBody(
             fluidRow(
               column(width = 12, box(tableOutput("table_all_countries"), width = NULL)),
             )
-            ),
+    ),
     tabItem(tabName = 'semiconductors',
             h1(paste0("Supply Chain: World Info on Semiconductors Industry"), align="center", 
                style = "font-family: 'Arial'; font-si16pt"),
@@ -128,8 +129,20 @@ body <- dashboardBody(
               column(width = 6),
               column(width = 6, uiOutput("topten_country")),
               h4(textOutput("info_text")),
+              h2(paste0("10 Main exporters & Mexico"), align = 'justify', 
+                 style = "font-family: 'Arial'; font-si16pt"),
+              h4(paste0("Mexico may be part of the top 10 or just be there for comparison purposes"),
+                 align = 'justify', style = "font-family: 'Arial'; font-si14pt"),
               column(width = 6, box(plotOutput("visual"), width = NULL)),
-              column(width = 6, box(tableOutput("country_info"), width = NULL))
+              column(width = 6, box(tableOutput("country_info"), width = NULL)),
+              column(width = 6),
+              column(width = 6, uiOutput("topten_country_imp")),
+              h2(paste0("10 Main importers & Mexico"), align = 'justify', 
+                 style = "font-family: 'Arial'; font-si16pt"),
+              h4(paste0("Mexico may be part of the top 10 or just be there for comparison purposes"),
+                 align = 'justify', style = "font-family: 'Arial'; font-si14pt"),
+              column(width = 6, box(plotOutput("visual2"), width = NULL)),
+              column(width = 6, box(tableOutput("country_info_imp"), width = NULL))
             ))
   ))
 
@@ -142,11 +155,11 @@ server <- function(input, output) {
   trade_db <- read_csv("db_trade_f.csv") %>% arrange_db()
   trade_db <- add_description(trade_db)
   
-      #create two databases: back and front end
+  #create two databases: back and front end
   back_end <- trade_db %>% filter(PHASE == "Back end")
   front_end <- trade_db %>% filter(PHASE == "Front end")
   
-      #create boxes to show the value of the phase of the production 
+  #create boxes to show the value of the phase of the production 
   output$fe_box <- renderValueBox({
     valueBox(
       VB_style( paste0( '$',format(sum(front_end$TradeValue)/1000000,big.mark=','), " m" ),  "font-size: 60%;"  ),
@@ -191,7 +204,7 @@ server <- function(input, output) {
       knitr::kable("html") %>%
       kable_styling("striped", full_width = F)
   }
-    
+  
   
   
   #semiconductors section
@@ -210,7 +223,9 @@ server <- function(input, output) {
   })
   
   observeEvent(input$choose_product, {
-    values_react$top_ten <- gen_top_ten(values_react$filtered_db, values_react$selected_product) %>%
+    values_react$top_ten <- gen_top_ten(values_react$filtered_db, values_react$selected_product, From) %>%
+      select(Country)
+    values_react$top_ten_imp <- gen_top_ten(values_react$filtered_db, values_react$selected_product, To) %>%
       select(Country)
   })
   
@@ -219,6 +234,15 @@ server <- function(input, output) {
                 #titulo del botón
                 label="Select country",
                 choices = values_react$top_ten, width = NULL)
+  })
+  
+  #lo mismo para importaciones
+  
+  output$topten_country_imp <- renderUI({
+    selectInput(inputId="topten_country_imp",
+                #titulo del botón
+                label="Select country",
+                choices = values_react$top_ten_imp, width = NULL)
   })
   
   output$products <- renderUI({
@@ -293,9 +317,17 @@ server <- function(input, output) {
     gen_graph(values_react$filtered_db, input$choose_product)
   })
   
+  output$visual2 <- renderPlot({
+    gen_graph_imp(values_react$filtered_db, input$choose_product)
+  })
+  
+  #output$visual2 <- renderPlot({
+    #gen_graph(values_react$filtered_db, input$choose_product, To)
+  #})
+  
   output$country_info <- function() {
     country_table <- gen_country_info(values_react$filtered_db, 
-                                      input$topten_country, input$choose_product)
+                                      input$topten_country, input$choose_product, 'exporter')
     country_table %>%
       knitr::kable("html") %>%
       kable_styling("striped", full_width = F) %>% 
@@ -303,8 +335,18 @@ server <- function(input, output) {
       scroll_box(width = "500px", height = "400px")
   }
   
+  output$country_info_imp <- function() {
+    country_table_imp <- gen_country_info(values_react$filtered_db, 
+                                      input$topten_country_imp, input$choose_product, 'importer')
+    country_table_imp %>%
+      knitr::kable("html") %>%
+      kable_styling("striped", full_width = F) %>% 
+      kable_paper() %>%
+      scroll_box(width = "500px", height = "400px")
+  }
+  
   output$product_text <- renderText({
-    paste0("Top ten export countries of product: ", input$choose_product)
+    paste0("Top ten export and import countries of product: ", input$choose_product)
   })
   
   output$info_text <- renderText({
