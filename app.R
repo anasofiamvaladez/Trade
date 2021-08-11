@@ -95,7 +95,42 @@ body <- dashboardBody(
             h3(paste0("Top 10 exporting countries: Semiconductors Supply Industry"), align = "justify", 
                style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              column(width = 12, box(tableOutput("table_all_countries"), width = NULL)),
+              column(width = 12, box(tableOutput("table_all_countries_ex"), width = NULL)),
+            ),
+            h3(paste0("Top 10 importing countries: Semiconductors Supply Industry"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              column(width = 12, box(tableOutput("table_all_countries_im"), width = NULL)),
+            ),
+            h3(paste0("10 most exported products of the Back End Semiconductors Supply Industry"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              column(width = 12, box(tableOutput("be_products"), width = NULL)),
+            ),
+            h3(paste0("Top 10 exporting countries: Back End Semiconductors Supply Industry"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              column(width = 12, box(tableOutput("be_countries_ex"), width = NULL)),
+            ),
+            h3(paste0("Top 10 importing countries: Back End Semiconductors Supply Industry"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              column(width = 12, box(tableOutput("be_countries_im"), width = NULL)),
+            ),
+            h3(paste0("10 most exported products of the Front End Semiconductors Supply Industry"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              column(width = 12, box(tableOutput("fe_products"), width = NULL)),
+            ),
+            h3(paste0("Top 10 exporting countries: Front End Semiconductors Supply Industry"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              column(width = 12, box(tableOutput("fe_countries_ex"), width = NULL)),
+            ),
+            h3(paste0("Top 10 importing countries: Front End Semiconductors Supply Industry"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              column(width = 12, box(tableOutput("fe_countries_im"), width = NULL)),
             )
     ),
     tabItem(tabName = 'semiconductors',
@@ -181,31 +216,46 @@ server <- function(input, output) {
   })
   
   output$table_all_products <- function() {
-    top_all_products <- trade_db %>% group_by(codes_descrip) %>%
-      summarise_at(vars(TradeValue), list(TradeValue=sum)) %>%
-      arrange(-TradeValue) %>%
-      mutate(percent_value = round(TradeValue / sum(TradeValue) * 100, 2)) %>%
-      slice_head(n=10)
-    c_change <- c(2)
-    top_all_products[c_change] <- lapply(top_all_products[c_change], formatC, big.mark= ',', decimal.mark =".", format = "f", digits = 2)
-    top_all_products %>%
-      knitr::kable("html") %>%
-      kable_styling("striped", full_width = F)
+    summarize_by(trade_db, quo(codes_descrip), "TradeValue")
   }
   
-  output$table_all_countries <- function() {
-    top_all_countries <- trade_db %>% group_by(From) %>%
-      summarise_at(vars(TradeValue), list(TradeValue=sum)) %>%
-      arrange(-TradeValue) %>%
-      dplyr::rename(Export_Country = From) %>%
-      mutate(percent_value = round(TradeValue / sum(TradeValue) * 100, 2)) %>%
-      slice_head(n=10)
-    top_all_countries %>%
-      knitr::kable("html") %>%
-      kable_styling("striped", full_width = F)
+  output$table_all_countries_ex <- function() {
+    summarize_by(trade_db, quo(From), "TradeValue")
   }
   
+  output$table_all_countries_im <- function() {
+    summarize_by(trade_db, quo(To), "TradeValue")
+  }
   
+  output$be_products <- function() {
+    back_end_pro <- trade_db %>% filter(PHASE == "Back end")
+    summarize_by(back_end_pro, quo(codes_descrip), "TradeValue")
+  }
+  
+  output$be_countries_ex <- function() {
+    back_end_pro <- trade_db %>% filter(PHASE == "Back end")
+    summarize_by(back_end_pro, quo(From), "TradeValue")
+  }
+  
+  output$be_countries_im <- function() {
+    back_end_pro <- trade_db %>% filter(PHASE == "Back end")
+    summarize_by(back_end_pro, quo(To), "TradeValue")
+  }
+  
+  output$fe_products <- function() {
+    front_end_pro <- trade_db %>% filter(PHASE == "Front end")
+    summarize_by(front_end_pro, quo(codes_descrip), "TradeValue")
+  }
+  
+  output$fe_countries_ex <- function() {
+    front_end_pro <- trade_db %>% filter(PHASE == "Front end")
+    summarize_by(front_end_pro, quo(From), "TradeValue")
+  }
+  
+  output$fe_countries_im <- function() {
+    front_end_pro <- trade_db %>% filter(PHASE == "Front end")
+    summarize_by(front_end_pro, quo(To), "TradeValue")
+  }
   
   #semiconductors section
   values_react <- reactiveValues()

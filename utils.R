@@ -84,6 +84,20 @@ get_geo_nodes <- function(data, location_file = COORDINATES_C) {
                                by.y = "name")
 }
 
+summarize_by <- function(db, category, Total_Value) {
+  top_ten <- db %>% group_by(!!category) %>%
+    summarise_at(vars(Total_Value), list(Total_Value=sum)) %>%
+    arrange(-Total_Value) %>%
+    mutate(Percent_value = round(Total_Value / sum(Total_Value) * 100, 2)) %>%
+    slice_head(n=10)
+  c_change <- c(2)
+  top_ten[c_change] <- lapply(top_ten[c_change], formatC, big.mark= ',', 
+                              decimal.mark =".", format = "f", digits = 2)
+  top_ten %>%
+    knitr::kable("html") %>%
+    kable_styling("striped", full_width = F)
+}
+
 gen_stats_table <- function(data_base) {
   final_db <- data_base %>% 
     select(From, To, codes_descrip, cmdDescE,Naic_descrip, TradeValue, percent_value, COMPLEXITY) %>% 
