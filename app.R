@@ -90,47 +90,47 @@ body <- dashboardBody(
             h3(paste0("10 most exported products of the Semiconductors Supply Industry"), align = "justify", 
                style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              column(width = 12, box(tableOutput("table_all_products"), width = NULL)),
+              column(width = 12, box(tableOutput("table_all_products"), width = NULL))
             ),
             h3(paste0("Top 10 exporting countries: Semiconductors Supply Industry"), align = "justify", 
                style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              column(width = 12, box(tableOutput("table_all_countries_ex"), width = NULL)),
+              column(width = 12, box(tableOutput("table_all_countries_ex"), width = NULL))
             ),
             h3(paste0("Top 10 importing countries: Semiconductors Supply Industry"), align = "justify", 
                style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              column(width = 12, box(tableOutput("table_all_countries_im"), width = NULL)),
+              column(width = 12, box(tableOutput("table_all_countries_im"), width = NULL))
             ),
             h3(paste0("10 most exported products of the Back End Semiconductors Supply Industry"), align = "justify", 
                style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              column(width = 12, box(tableOutput("be_products"), width = NULL)),
+              column(width = 12, box(tableOutput("be_products"), width = NULL))
             ),
             h3(paste0("Top 10 exporting countries: Back End Semiconductors Supply Industry"), align = "justify", 
                style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              column(width = 12, box(tableOutput("be_countries_ex"), width = NULL)),
+              column(width = 12, box(tableOutput("be_countries_ex"), width = NULL))
             ),
             h3(paste0("Top 10 importing countries: Back End Semiconductors Supply Industry"), align = "justify", 
                style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              column(width = 12, box(tableOutput("be_countries_im"), width = NULL)),
+              column(width = 12, box(tableOutput("be_countries_im"), width = NULL))
             ),
             h3(paste0("10 most exported products of the Front End Semiconductors Supply Industry"), align = "justify", 
                style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              column(width = 12, box(tableOutput("fe_products"), width = NULL)),
+              column(width = 12, box(tableOutput("fe_products"), width = NULL))
             ),
             h3(paste0("Top 10 exporting countries: Front End Semiconductors Supply Industry"), align = "justify", 
                style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              column(width = 12, box(tableOutput("fe_countries_ex"), width = NULL)),
+              column(width = 12, box(tableOutput("fe_countries_ex"), width = NULL))
             ),
             h3(paste0("Top 10 importing countries: Front End Semiconductors Supply Industry"), align = "justify", 
                style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              column(width = 12, box(tableOutput("fe_countries_im"), width = NULL)),
+              column(width = 12, box(tableOutput("fe_countries_im"), width = NULL))
             )
     ),
     tabItem(tabName = 'semiconductors',
@@ -156,6 +156,8 @@ body <- dashboardBody(
               h2(paste0("Map: Export flows"), align = 'justify', 
                  style = "font-family: 'Arial'; font-si16pt"),
               column(width = 12, box(leafletOutput("map"), width = NULL)),
+              h4(paste0("Green: only one of the two countries in the relation is a exporter. Red: Both countries export
+                        to each other.")),
               h2(paste0("Trade Information Table"), align = 'justify', 
                  style = "font-family: 'Arial'; font-si16pt"),
               column(width = 12, box(tableOutput("statstable"), width = NULL)),
@@ -342,7 +344,7 @@ server <- function(input, output) {
     content <- paste(round(filtered_by_product$percent_value, 2), "Exporter:", filtered_by_product$From, sep = " ")
     
     leaflet(vert_import) %>%
-      addTiles() %>%
+      addProviderTiles(providers$CartoDB.Positron, options=providerTileOptions(noWrap = TRUE))%>%
       addCircles(data = vert_import, radius = 1000, weight = 10, color = "navy", label = vert_import$name )%>%
       addPolylines(data = edges_import, weight = filtered_by_product$percent_value, label = content, color = filtered_by_product$is_duplicated)%>%
       addMarkers(holder_coordinates$Long, holder_coordinates$Lat,
@@ -372,7 +374,7 @@ server <- function(input, output) {
   })
   
   #output$visual2 <- renderPlot({
-    #gen_graph(values_react$filtered_db, input$choose_product, To)
+  #gen_graph(values_react$filtered_db, input$choose_product, To)
   #})
   
   output$country_info <- function() {
@@ -387,7 +389,7 @@ server <- function(input, output) {
   
   output$country_info_imp <- function() {
     country_table_imp <- gen_country_info(values_react$filtered_db, 
-                                      input$topten_country_imp, input$choose_product, 'importer')
+                                          input$topten_country_imp, input$choose_product, 'importer')
     country_table_imp %>%
       knitr::kable("html") %>%
       kable_styling("striped", full_width = F) %>% 
