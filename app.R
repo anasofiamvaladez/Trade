@@ -179,7 +179,10 @@ body <- dashboardBody(
               h4(paste0("Mexico may be part of the top 10 or just be there for comparison purposes"),
                  align = 'justify', style = "font-family: 'Arial'; font-si14pt"),
               column(width = 6, box(plotOutput("visual2"), width = NULL)),
-              column(width = 6, box(tableOutput("country_info_imp"), width = NULL))
+              column(width = 6, box(tableOutput("country_info_imp"), width = NULL)),
+              h2(paste0("10 more specialized countries & Mexico"), align = 'justify', 
+                 style = "font-family: 'Arial'; font-si16pt"),
+              column(width = 6, box(plotOutput("visual_bars"), width = NULL))
             ))
   ))
 
@@ -373,9 +376,9 @@ server <- function(input, output) {
     gen_graph_imp(values_react$filtered_db, input$choose_product)
   })
   
-  #output$visual2 <- renderPlot({
-  #gen_graph(values_react$filtered_db, input$choose_product, To)
-  #})
+  output$visual_bars <- renderPlot({
+  gen_graph_bars(values_react$filtered_db, input$choose_product)
+  })
   
   output$country_info <- function() {
     country_table <- gen_country_info(values_react$filtered_db, 
