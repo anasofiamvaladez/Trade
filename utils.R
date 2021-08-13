@@ -1,6 +1,8 @@
 
 
 
+
+
 #You have loaded plyr after dplyr - this is likely to cause problems.
 #If you need functions from both plyr and dplyr, please load plyr first, then dplyr:
 
@@ -100,7 +102,7 @@ summarize_by <- function(db, category, Total_Value) {
 
 gen_stats_table <- function(data_base) {
   final_db <- data_base %>% 
-    select(From, To, codes_descrip, cmdDescE,Naic_descrip, TradeValue, percent_value, COMPLEXITY) %>% 
+    select(From, To, codes_descrip, cmdDescE,Naic_descrip, TradeValue, percent_value, COMPLEXITY, balassa) %>% 
     #arrange(desc(percent_value)) %>%
     #slice_head(n=10) %>%s
     dplyr::rename(
@@ -111,10 +113,13 @@ gen_stats_table <- function(data_base) {
       NAIC_description = Naic_descrip,
       US_value = TradeValue,
       US_val_percent = percent_value,
-      Complexity_index = COMPLEXITY
+      Complexity_index = COMPLEXITY,
+      Balassa_index = balassa
     )
   c_change <- c(6)
+  col_balassa <- c(9)
   final_db[c_change] <- lapply(final_db[c_change], formatC, big.mark= ',', decimal.mark =".", format = "f", digits = 2)
+  final_db[col_balassa] <- lapply(final_db[col_balassa], formatC, big.mark= ',', decimal.mark =".", format = "f", digits = 2)
   return(final_db)
 }
 
@@ -190,26 +195,69 @@ gen_graph_imp <- function(data_base, product) {
   square
 }
 
+gen_graph_bars <- function(data_base, product) {
+  
+  top <-  data_base %>%
+    filter(codes_descrip == product) %>% 
+    select(From, balassa) %>%
+    distinct() %>%
+    arrange(-balassa) %>%
+    mutate_if(is.numeric, ~round(., 2)) %>%
+    dplyr::rename(Country = From, Balassa_index = balassa)%>% 
+    mutate(Group = ifelse(Country == "Mexico", "Mexico", "Others"))
+  
+  top_ten <- top %>%
+    slice_head(n=10)
+  
+  if ("Mexico" %in% top_ten$Country) {
+    
+    top_ten <- top_ten 
+    
+  }
+  
+  else {
+    mexico <- top %>%
+      filter(Country == "Mexico")
+    
+    top_ten <- top %>%
+      slice_head(n=9)
+    
+    top_ten <- rbind(mexico, top_ten)
+  }
+
+  
+  
+  bars <- ggplot(top_ten, aes(x = reorder(Country, -Balassa_index, sum), y = Balassa_index)) +
+             geom_col(aes(fill=Group)) +
+             geom_text(aes(label = Balassa_index), vjust = 2, size = 5, color = "#ffffff") +
+             labs(x = "Countries Top 10", y = "Balassa Index") +
+             theme(axis.text=element_text(size = 10),
+                   axis.title.x = element_text(color = "#0099f9", size = 12, face = "bold"),
+                   axis.title.y = element_text(size = 12, face = "italic")) +
+             scale_fill_manual(values = c("#9999CC", "#CC6666"))
+  bars
+}
+
 gen_country_info <- function(database, country, product, importer_or_exporter) {
   
   if (importer_or_exporter == 'exporter') {
-      country <- database %>% filter(From == country) %>%
-          filter(codes_descrip == product) %>%
-          mutate(percent_country = round((TradeValue / sum(TradeValue) * 100), 3)) %>%
-          select(To, TradeValue, percent_country) %>%
-          dplyr::rename(Country = To) %>%
-          arrange(desc(percent_country))
-          return(country)  
+    country <- database %>% filter(From == country) %>%
+      filter(codes_descrip == product) %>%
+      mutate(percent_country = round((TradeValue / sum(TradeValue) * 100), 3)) %>%
+      select(To, TradeValue, percent_country) %>%
+      dplyr::rename(Country = To) %>%
+      arrange(desc(percent_country))
+    return(country)  
     
   } else {
     
-      country <- database %>% filter(To == country) %>%
-        filter(codes_descrip == product) %>%
-        mutate(percent_country = round((TradeValue / sum(TradeValue) * 100), 3)) %>%
-        select(From, TradeValue, percent_country) %>%
-        dplyr::rename(Country = From) %>%
-        arrange(desc(percent_country))
-      return(country)
+    country <- database %>% filter(To == country) %>%
+      filter(codes_descrip == product) %>%
+      mutate(percent_country = round((TradeValue / sum(TradeValue) * 100), 3)) %>%
+      select(From, TradeValue, percent_country) %>%
+      dplyr::rename(Country = From) %>%
+      arrange(desc(percent_country))
+    return(country)
     
   }
 }
@@ -219,8 +267,6 @@ gen_country_info <- function(database, country, product, importer_or_exporter) {
 VB_style <- function(msg = 'Hello', style="font-size: 100%;"){
   tags$p( msg , style = style )
 }
-
-
 
 
 
