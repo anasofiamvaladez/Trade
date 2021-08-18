@@ -143,6 +143,7 @@ body <- dashboardBody(
               column(width = 4, selectInput("phase", "Phase of the Supply Chain",
                                             choices = c("Back end" = "Back end", 
                                                         "Front end" = "Front end"), width = NULL)),
+              column(width = 4, uiOutput("broad")),
               #products debe ser parte del output de server
               column(width = 4, uiOutput("products")),
               column(width = 4, selectInput("fraction", "Top X partners",
@@ -273,9 +274,17 @@ server <- function(input, output) {
     values_react$phase <- input$phase
     values_react$fraction <- input$fraction
     values_react$filtered_db <- trade_db %>% filter(PHASE == values_react$phase)
-    values_react$lst_uprod <- unique(values_react$filtered_db[, "codes_descrip"])
+    #values_react$lst_uprod <- unique(values_react$filtered_db[, "codes_descrip"])
+    values_react$lst_broad <- unique(values_react$filtered_db[, "naics_description"])
+    values_react$broad <- input$broad
     values_react$selected_product <- input$choose_product
   })
+
+  observeEvent(input$broad, {
+    options_filtered = values_react$filtered_db %>% filter(naics_description == values_react$broad)
+    values_react$lst_uprod = unique(options_filtered[, "codes_descrip"])
+  })
+
   
   observeEvent(input$choose_product, {
     values_react$top_ten <- gen_top_ten(values_react$filtered_db, values_react$selected_product, From) %>%
@@ -300,6 +309,13 @@ server <- function(input, output) {
                 choices = values_react$top_ten_imp, width = NULL)
   })
   
+  output$broad <- renderUI({
+    selectInput(inputId="broad",
+                #titulo del botón
+                label="Broad Product",
+                choices = values_react$lst_broad, width = NULL)
+  })
+
   output$products <- renderUI({
     selectInput(inputId="choose_product",
                 #titulo del botón
