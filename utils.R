@@ -1,8 +1,5 @@
 
 
-
-
-
 #You have loaded plyr after dplyr - this is likely to cause problems.
 #If you need functions from both plyr and dplyr, please load plyr first, then dplyr:
 
@@ -20,6 +17,12 @@ library(png)
 library(treemap)
 library(ggplot2)
 library(treemapify)
+library(igraph)
+library(rgl)
+library(intergraph)
+library(ggnetwork)
+library(sna)
+library(viridis)
 
 official_names <- c("Bosnia Herzegovina", "Br. Virgin Isds",  "Cabo Verde", 
                     "Central African Rep.", "Christmas Isds", "Dem. People's Rep. of Korea", 
@@ -238,6 +241,26 @@ gen_graph_bars <- function(data_base, product) {
   bars
 }
 
+
+  gen_graph_proximity <- function(industry) {
+    
+    par(bg="white")
+    nodes <- read_csv("nodes.csv")
+    edges <- read_csv("edges.csv")
+    net <- graph_from_data_frame(d=edges, vertices=nodes, directed=T) 
+    rbPal <- colorRampPalette(c('lawn green','red'))
+    V(net)$color<- rbPal(10)[as.numeric(cut(V(net)$proximity, breaks = 10))]
+    
+    graph_prox <- ggplot(ggnetwork(net), aes(x = x, y = y, xend = xend, yend = yend)) +
+      geom_edges(color = "black")  +
+      geom_nodes(aes(color = color), show.legend = FALSE) +
+      geom_nodelabel(aes(label = Label, color = color), show.legend = FALSE,
+                     fontface = "bold") + scale_color_brewer(palette = "Set2") +
+      theme_blank() 
+    graph_prox
+  }
+  
+
 gen_country_info <- function(database, country, product, importer_or_exporter) {
   
   if (importer_or_exporter == 'exporter') {
@@ -267,6 +290,8 @@ gen_country_info <- function(database, country, product, importer_or_exporter) {
 VB_style <- function(msg = 'Hello', style="font-size: 100%;"){
   tags$p( msg , style = style )
 }
+
+
 
 
 
