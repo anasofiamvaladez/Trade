@@ -1,5 +1,4 @@
 
-
 #
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above.
@@ -183,7 +182,10 @@ body <- dashboardBody(
               column(width = 6, box(tableOutput("country_info_imp"), width = NULL)),
               h2(paste0("10 more specialized countries & Mexico"), align = 'justify', 
                  style = "font-family: 'Arial'; font-si16pt"),
-              column(width = 6, box(plotOutput("visual_bars"), width = NULL))
+              column(width = 6, box(plotOutput("visual_bars"), width = NULL)),
+              h2(paste0("Proximity of industries"), align = 'justify', 
+                 style = "font-family: 'Arial'; font-si16pt"),
+              column(width = 6, box(plotOutput("visual_proximity"), width = NULL))
             ))
   ))
 
@@ -279,12 +281,12 @@ server <- function(input, output) {
     values_react$broad <- input$broad
     values_react$selected_product <- input$choose_product
   })
-
+  
   observeEvent(input$broad, {
     options_filtered = values_react$filtered_db %>% filter(naics_description == values_react$broad)
     values_react$lst_uprod = unique(options_filtered[, "codes_descrip"])
   })
-
+  
   
   observeEvent(input$choose_product, {
     values_react$top_ten <- gen_top_ten(values_react$filtered_db, values_react$selected_product, From) %>%
@@ -315,7 +317,7 @@ server <- function(input, output) {
                 label="Broad Product",
                 choices = values_react$lst_broad, width = NULL)
   })
-
+  
   output$products <- renderUI({
     selectInput(inputId="choose_product",
                 #titulo del botón
@@ -394,6 +396,10 @@ server <- function(input, output) {
   
   output$visual_bars <- renderPlot({
   gen_graph_bars(values_react$filtered_db, input$choose_product)
+  })
+  
+  output$visual_proximity <- renderPlot({
+    gen_graph_proximity('semiconductors')
   })
   
   output$country_info <- function() {
