@@ -142,7 +142,6 @@ body <- dashboardBody(
               column(width = 4, selectInput("phase", "Phase of the Supply Chain",
                                             choices = c("Back end" = "Back end", 
                                                         "Front end" = "Front end"), width = NULL)),
-              column(width = 4, uiOutput("broad")),
               #products debe ser parte del output de server
               column(width = 4, uiOutput("products")),
               column(width = 4, selectInput("fraction", "Top X partners",
@@ -152,6 +151,7 @@ body <- dashboardBody(
                                                         "250" = 250,
                                                         "500" = 500
                                             ), width = NULL)),
+              column(width = 12),
               #Use leafletOutput() to create a UI element, and renderLeaflet() to render the map widget.
               h2(paste0("Map: Export flows"), align = 'justify', 
                  style = "font-family: 'Arial'; font-si16pt"),
@@ -183,10 +183,39 @@ body <- dashboardBody(
               h2(paste0("10 more specialized countries & Mexico"), align = 'justify', 
                  style = "font-family: 'Arial'; font-si16pt"),
               column(width = 6, box(plotOutput("visual_bars"), width = NULL)),
-              h2(paste0("Proximity of industries"), align = 'justify', 
+              column(width = 6, div(style = "height:500px")),
+              h2(paste0("Proximity of industries"), align = 'center', 
                  style = "font-family: 'Arial'; font-si16pt"),
-              column(width = 6, box(plotOutput("visual_proximity"), width = NULL))
-            ))
+              column(width = 12, box(plotOutput("visual_proximity"), width = NULL))
+            )),
+    
+      #Tab of batteries
+      tabItem(tabName = 'batteries',
+            h1(paste0("Supply Chain: World Info on Batteries Industry"), align="center", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            h2(paste0("Select the phase, products, and number of partners"), align = "justify",
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              #Create a select list input control, "phase" debe ser parte del input de server
+              column(width = 4, selectInput("phase_batteries", "Phase of the Supply Chain",
+                                            choices = c("Upstring" = "Upstring", 
+                                                        "Downstream" = "Downstream",
+                                                        "Midstream" = "Midstream")
+                                                        , width = NULL)),
+              #products debe ser parte del output de server
+              column(width = 4, uiOutput("products_batteries")),
+              column(width = 4, selectInput("fraction_batteries", "Top X partners",
+                                            choices = c("10" = 10, 
+                                                        "25" = 25,
+                                                        "100" = 100,
+                                                        "250" = 250,
+                                                        "500" = 500
+                                            ), width = NULL)),
+              column(width = 12),
+              #Use leafletOutput() to create a UI element, and renderLeaflet() to render the map widget.
+              h2(paste0("Map: Export flows"), align = 'justify', 
+                 style = "font-family: 'Arial'; font-si16pt")
+          ))    
   ))
 
 ui <- dashboardPage(header, siderbar, body)
@@ -195,12 +224,19 @@ ui <- dashboardPage(header, siderbar, body)
 
 server <- function(input, output) {
   #General industry information
-  trade_db <- read_csv("db_trade_f.csv") %>% arrange_db()
+  trade_db <- read_csv("db_trade_f_semiconductores.csv") %>% arrange_db()
   trade_db <- add_description(trade_db)
+  
+  trade_db_batteries <- read_csv("db_trade_f_baterias.csv") %>% arrange_db()
+  trade_db_batteries <- add_description(trade_db_batteries)
   
   #create two databases: back and front end
   back_end <- trade_db %>% filter(PHASE == "Back end")
   front_end <- trade_db %>% filter(PHASE == "Front end")
+  
+  upstring <- trade_db_batteries %>% filter(PHASE == "Upstring")
+  midstream <- trade_db_batteries %>% filter(PHASE == "Midstream")
+  downstream <- trade_db_batteries %>% filter(PHASE == "Downstream")
   
   #create boxes to show the value of the phase of the production 
   output$fe_box <- renderValueBox({
@@ -265,26 +301,26 @@ server <- function(input, output) {
     summarize_by(front_end_pro, quo(To), "TradeValue")
   }
   
-  #semiconductors section
+  #Section with reactive Items
   values_react <- reactiveValues()
-  
-  #Cambiar nombres de los paises y ordenar database
-  
+  values_react_batteries <- reactiveValues()
   
   #Create a reactive observer
   observe({
     values_react$phase <- input$phase
     values_react$fraction <- input$fraction
     values_react$filtered_db <- trade_db %>% filter(PHASE == values_react$phase)
-    #values_react$lst_uprod <- unique(values_react$filtered_db[, "codes_descrip"])
-    values_react$lst_broad <- unique(values_react$filtered_db[, "naics_description"])
-    values_react$broad <- input$broad
+    values_react$lst_uprod <- unique(values_react$filtered_db[, "codes_descrip"])
     values_react$selected_product <- input$choose_product
+   
   })
-  
-  observeEvent(input$broad, {
-    options_filtered = values_react$filtered_db %>% filter(naics_description == values_react$broad)
-    values_react$lst_uprod = unique(options_filtered[, "codes_descrip"])
+
+  observe({
+    values_react_batteries$phase <- input$phase_batteries
+    values_react_batteries$fraction <- input$fraction_batteries
+    values_react_batteries$filtered_db <- trade_db_batteries %>% filter(PHASE == values_react_batteries$phase)
+    values_react_batteries$lst_uprod <- unique(values_react_batteries$filtered_db[, "codes_descrip"])
+    values_react_batteries$selected_product <- input$choose_product_batteries
   })
   
   
@@ -295,11 +331,25 @@ server <- function(input, output) {
       select(Country)
   })
   
+  observeEvent(input$choose_product_batteries, {
+    values_react_batteries$top_ten_batteries <- gen_top_ten(values_react_batteries$filtered_db, values_react_batteries$selected_product, From) %>%
+      select(Country)
+    values_react_batteries$top_ten_imp_batteries <- gen_top_ten(values_react_batteries$filtered_db, values_react_batteries$selected_product, To) %>%
+      select(Country)
+  })
+  
   output$topten_country <- renderUI({
     selectInput(inputId="topten_country",
                 #titulo del botón
                 label="Select country",
                 choices = values_react$top_ten, width = NULL)
+  })
+  
+  output$topten_country_batteries <- renderUI({
+    selectInput(inputId="topten_country_batteries",
+                #titulo del botón
+                label="Select country",
+                choices = values_react_batteries$top_ten_batteries, width = NULL)
   })
   
   #lo mismo para importaciones
@@ -311,18 +361,19 @@ server <- function(input, output) {
                 choices = values_react$top_ten_imp, width = NULL)
   })
   
-  output$broad <- renderUI({
-    selectInput(inputId="broad",
-                #titulo del botón
-                label="Broad Product",
-                choices = values_react$lst_broad, width = NULL)
-  })
   
   output$products <- renderUI({
     selectInput(inputId="choose_product",
                 #titulo del botón
                 label="Product",
                 choices = values_react$lst_uprod, width = NULL)
+  })
+  
+  output$products_batteries <- renderUI({
+    selectInput(inputId="choose_product_batteries",
+                #titulo del botón
+                label="Product",
+                choices = values_react_batteries$lst_uprod, width = NULL)
   })
   
   output$map <- renderLeaflet({
