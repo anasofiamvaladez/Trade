@@ -91,45 +91,121 @@ body <- dashboardBody(
             fluidRow(
               column(width = 12, box(tableOutput("table_all_products"), width = NULL))
             ),
-            h3(paste0("Top 10 exporting countries: Semiconductors Supply Industry"), align = "justify", 
-               style = "font-family: 'Arial'; font-si16pt"),
-            fluidRow(
-              column(width = 12, box(tableOutput("table_all_countries_ex"), width = NULL))
+            fluidRow(column(width = 6, 
+                            h3(paste0("Top 10 exporting countries: Semiconductors Supply Industry"), align = "justify", 
+                               style = "font-family: 'Arial'; font-si16pt")),
+                     column(width = 6, 
+                            h3(paste0("Top 10 importing countries: Semiconductors Supply Industry"), align = "justify", 
+                               style = "font-family: 'Arial'; font-si16pt")), 
+                     column(width = 6, box(tableOutput("table_all_countries_ex"), width = NULL)),
+                     column(width = 6, box(tableOutput("table_all_countries_im"), width = NULL))
             ),
-            h3(paste0("Top 10 importing countries: Semiconductors Supply Industry"), align = "justify", 
-               style = "font-family: 'Arial'; font-si16pt"),
-            fluidRow(
-              column(width = 12, box(tableOutput("table_all_countries_im"), width = NULL))
-            ),
+            h2(paste0("Back End Phase"), align = "center",style = "font-family: 'Arial'; font-si16pt"),
             h3(paste0("10 most exported products of the Back End Semiconductors Supply Industry"), align = "justify", 
                style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
               column(width = 12, box(tableOutput("be_products"), width = NULL))
             ),
-            h3(paste0("Top 10 exporting countries: Back End Semiconductors Supply Industry"), align = "justify", 
-               style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              column(width = 12, box(tableOutput("be_countries_ex"), width = NULL))
+              column(width = 6, 
+                     h3(paste0("Top 10 exporting countries: Back End Semiconductors Supply Industry"), align = "justify", 
+                        style = "font-family: 'Arial'; font-si16pt")),
+              column(width = 6, 
+                     h3(paste0("Top 10 importing countries: Back End Semiconductors Supply Industry"), align = "justify", 
+                        style = "font-family: 'Arial'; font-si16pt")),
+              column(width = 6, box(tableOutput("be_countries_ex"), width = NULL)), 
+              column(width = 6, box(tableOutput("be_countries_im"), width = NULL))
             ),
-            h3(paste0("Top 10 importing countries: Back End Semiconductors Supply Industry"), align = "justify", 
-               style = "font-family: 'Arial'; font-si16pt"),
-            fluidRow(
-              column(width = 12, box(tableOutput("be_countries_im"), width = NULL))
-            ),
+            h2(paste0("Front End Phase"), align = "center",style = "font-family: 'Arial'; font-si16pt"),
             h3(paste0("10 most exported products of the Front End Semiconductors Supply Industry"), align = "justify", 
                style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
               column(width = 12, box(tableOutput("fe_products"), width = NULL))
             ),
-            h3(paste0("Top 10 exporting countries: Front End Semiconductors Supply Industry"), align = "justify", 
-               style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              column(width = 12, box(tableOutput("fe_countries_ex"), width = NULL))
+              column(width = 6, 
+                     h3(paste0("Top 10 exporting countries: Front End Semiconductors Supply Industry"), align = "justify", 
+                        style = "font-family: 'Arial'; font-si16pt")),
+              column(width = 6, 
+                     h3(paste0("Top 10 importing countries: Front End Semiconductors Supply Industry"), align = "justify", 
+                        style = "font-family: 'Arial'; font-si16pt")),
+              column(width = 6, box(tableOutput("fe_countries_ex"), width = NULL)), 
+              column(width = 6, box(tableOutput("fe_countries_im"), width = NULL))
             ),
-            h3(paste0("Top 10 importing countries: Front End Semiconductors Supply Industry"), align = "justify", 
+            
+            #general information of batteries industry
+            h1(paste0("Supply Chain of the Batteries Industry"), align ="center", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            h2(paste0("Data overview"), align="center", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            h3(paste0("Batteries Supply Chain by Phase"), align = "justify", 
                style = "font-family: 'Arial'; font-si16pt"),
             fluidRow(
-              column(width = 12, box(tableOutput("fe_countries_im"), width = NULL))
+              valueBoxOutput('upstring_box'), 
+              valueBoxOutput('midstream_box'), 
+              valueBoxOutput('downstream_box')
+            ),
+            h3(paste0("10 most exported products of the Batteries Supply Industry"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              column(width = 12, box(tableOutput("table_all_products_bat"), width = NULL))
+            ),
+            fluidRow(column(width = 6, 
+                            h3(paste0("Top 10 exporting countries: Batteries Supply Industry"), align = "justify", 
+                               style = "font-family: 'Arial'; font-si16pt")),
+                     column(width = 6, 
+                            h3(paste0("Top 10 importing countries: Batteries Supply Industry"), align = "justify", 
+                               style = "font-family: 'Arial'; font-si16pt")), 
+                     column(width = 6, box(tableOutput("table_all_countries_ex_bat"), width = NULL)),
+                     column(width = 6, box(tableOutput("table_all_countries_im_bat"), width = NULL))
+            ),
+            h2(paste0("Upstring Phase"), align = "center",style = "font-family: 'Arial'; font-si16pt"),
+            h3(paste0("10 most exported products of the Upstring Phase: Batteries Supply Industry"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              column(width = 12, box(tableOutput("upstring_products"), width = NULL))
+            ),
+            fluidRow(
+              column(width = 6, 
+                     h3(paste0("Top 10 exporting countries: Upstring Phase of the Batteries Supply Industry"), align = "justify", 
+                        style = "font-family: 'Arial'; font-si16pt")),
+              column(width = 6, 
+                     h3(paste0("Top 10 importing countries: Upstring Phase of the Batteries Supply Industry"), align = "justify", 
+                        style = "font-family: 'Arial'; font-si16pt")),
+              column(width = 6, box(tableOutput("ups_countries_ex"), width = NULL)), 
+              column(width = 6, box(tableOutput("ups_countries_im"), width = NULL))
+            ), 
+            h2(paste0("Midstream Phase"), align = "center",style = "font-family: 'Arial'; font-si16pt"),
+            h3(paste0("10 most exported products of the Midstream Phase: Batteries Supply Industry"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              column(width = 12, box(tableOutput("midstream_products"), width = NULL))
+            ),
+            fluidRow(
+              column(width = 6, 
+                     h3(paste0("Top 10 exporting countries: Midstream Phase of the Batteries Supply Industry"), align = "justify", 
+                        style = "font-family: 'Arial'; font-si16pt")),
+              column(width = 6, 
+                     h3(paste0("Top 10 importing countries: Midstream Phase of the Batteries Supply Industry"), align = "justify", 
+                        style = "font-family: 'Arial'; font-si16pt")),
+              column(width = 6, box(tableOutput("mid_countries_ex"), width = NULL)), 
+              column(width = 6, box(tableOutput("mid_countries_im"), width = NULL))
+            ), 
+            h2(paste0("Downstream Phase"), align = "center",style = "font-family: 'Arial'; font-si16pt"),
+            h3(paste0("10 most exported products of the Downstream Phase: Batteries Supply Industry"), align = "justify", 
+               style = "font-family: 'Arial'; font-si16pt"),
+            fluidRow(
+              column(width = 12, box(tableOutput("downstream_products"), width = NULL))
+            ),
+            fluidRow(
+              column(width = 6, 
+                     h3(paste0("Top 10 exporting countries: Downstream Phase of the Batteries Supply Industry"), align = "justify", 
+                        style = "font-family: 'Arial'; font-si16pt")),
+              column(width = 6, 
+                     h3(paste0("Top 10 importing countries: Downstream Phase of the Batteries Supply Industry"), align = "justify", 
+                        style = "font-family: 'Arial'; font-si16pt")),
+              column(width = 6, box(tableOutput("down_countries_ex"), width = NULL)), 
+              column(width = 6, box(tableOutput("down_countries_im"), width = NULL))
             )
     ),
     tabItem(tabName = 'semiconductors',
@@ -224,7 +300,7 @@ ui <- dashboardPage(header, siderbar, body)
 
 server <- function(input, output) {
   #General industry information
-  trade_db <- read_csv("db_trade_f_semiconductores.csv") %>% arrange_db()
+  trade_db <- read_csv("db_trade_f.csv") %>% arrange_db()
   trade_db <- add_description(trade_db)
   
   trade_db_batteries <- read_csv("db_trade_f_baterias.csv") %>% arrange_db()
@@ -486,6 +562,101 @@ server <- function(input, output) {
            " which represents ", round(sum(country_table$TradeValue)/sum(filtered_by_product$TradeValue)*100, 3), 
            "% of the total word exports of product ", input$choose_product, ".")
   })
+  
+  #Outputs for batteries industry section
+  upstring <- trade_db_batteries %>% filter(PHASE == "Upstring")
+  midstream <- trade_db_batteries %>% filter(PHASE == "Midstream")
+  downstream <- trade_db_batteries %>% filter(PHASE == "Downstream")
+  
+  #General statistics for batteries industry
+  
+  output$upstring_box <- renderValueBox({
+    valueBox(
+      VB_style( paste0( '$',format(sum(upstring$TradeValue)/1000000,big.mark=','), " m" ),  "font-size: 60%;"  ),
+      VB_style( paste0("Upstring Phase (", round(sum(upstring$TradeValue)/sum(trade_db_batteries$TradeValue)*100,1) ,"%)")  ), 
+      icon = icon('front', lib = 'glyphicon'), #icon("sign-in"),
+      color = "navy",
+      width = 6
+    )
+  })
+  
+  output$midstream_box <- renderValueBox({
+    valueBox(
+      VB_style( paste0( '$',format(sum(midstream$TradeValue)/1000000,big.mark=','), " m" ),  "font-size: 60%;"  ),
+      VB_style( paste0("Midstream Phase (", round(sum(midstream$TradeValue)/sum(trade_db_batteries$TradeValue)*100,1) ,"%)")  ), 
+      icon = icon('back', lib = 'glyphicon'), #icon("sign-in"),
+      color = "navy", 
+      width = 6
+    )
+  })
+  
+  output$downstream_box <- renderValueBox({
+    valueBox(
+      VB_style( paste0( '$',format(sum(downstream$TradeValue)/1000000,big.mark=','), " m" ),  "font-size: 60%;"  ),
+      VB_style( paste0("Downstream Phase (", round(sum(downstream$TradeValue)/sum(trade_db_batteries$TradeValue)*100,1) ,"%)")  ), 
+      icon = icon('back', lib = 'glyphicon'), #icon("sign-in"),
+      color = "navy", 
+      width = 6
+    )
+  })
+  
+  output$table_all_products_bat <- function() {
+    summarize_by(trade_db_batteries, quo(codes_descrip), "TradeValue")
+  }
+  
+  output$table_all_countries_ex_bat <- function() {
+    summarize_by(trade_db_batteries, quo(From), "TradeValue")
+  }
+  
+  output$table_all_countries_im_bat <- function() {
+    summarize_by(trade_db_batteries, quo(To), "TradeValue")
+  }
+  
+  output$upstring_products <- function() {
+    upstring_pro <- trade_db_batteries %>% filter(PHASE == "Upstring")
+    summarize_by(upstring_pro, quo(codes_descrip), "TradeValue")
+  }
+  
+  output$ups_countries_ex <- function() {
+    upstring_pro <- trade_db_batteries %>% filter(PHASE == "Upstring")
+    summarize_by(upstring_pro, quo(From), "TradeValue")
+  }
+  
+  output$ups_countries_im <- function() {
+    upstring_pro <- trade_db_batteries %>% filter(PHASE == "Upstring")
+    summarize_by(upstring_pro, quo(To), "TradeValue")
+  }
+  
+  output$midstream_products <- function() {
+    midstream_pro <- trade_db_batteries %>% filter(PHASE == "Midstream")
+    summarize_by(midstream_pro, quo(codes_descrip), "TradeValue")
+  }
+  
+  output$mid_countries_ex <- function() {
+    midstream_pro <- trade_db_batteries %>% filter(PHASE == "Midstream")
+    summarize_by(midstream_pro, quo(From), "TradeValue")
+  }
+  
+  output$mid_countries_im <- function() {
+    midstream_pro <- trade_db_batteries %>% filter(PHASE == "Midstream")
+    summarize_by(midstream_pro, quo(To), "TradeValue")
+  }
+  
+  output$downstream_products <- function() {
+    downstream_products_pro <- trade_db_batteries %>% filter(PHASE == "Downstream")
+    summarize_by(downstream_products_pro, quo(codes_descrip), "TradeValue")
+  }
+  
+  output$down_countries_ex <- function() {
+    downstream_products_pro <- trade_db_batteries %>% filter(PHASE == "Downstream")
+    summarize_by(downstream_products_pro, quo(From), "TradeValue")
+  }
+  
+  output$down_countries_im <- function() {
+    downstream_products_pro <- trade_db_batteries %>% filter(PHASE == "Downstream")
+    summarize_by(downstream_products_pro, quo(To), "TradeValue")
+  }
+  
 }
 
 
